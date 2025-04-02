@@ -25,7 +25,8 @@ fun AppNavigation(navController: NavHostController, authViewModel: AuthViewModel
                         else -> navController.navigate("home")
                     }
                 },
-                onNavigateToRegister = { navController.navigate("register") }
+                onNavigateToRegister = { navController.navigate("register") },
+//                onNavigateToLogin = { navController.navigate("login") }
             )
         }
         composable("register") {
@@ -38,3 +39,4 @@ fun AppNavigation(navController: NavHostController, authViewModel: AuthViewModel
         composable("admin") { AdminScreen(navController = navController) }
     }
 }
+

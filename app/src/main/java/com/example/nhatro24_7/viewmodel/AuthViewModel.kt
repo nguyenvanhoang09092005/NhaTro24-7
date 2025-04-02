@@ -3,6 +3,9 @@ package com.example.nhatro24_7.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.nhatro24_7.data.repository.AuthRepository
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount
+import com.google.firebase.auth.AuthCredential
+import com.google.firebase.auth.GoogleAuthProvider
 import kotlinx.coroutines.launch
 
 class AuthViewModel(private val authRepository: AuthRepository) : ViewModel() {
@@ -40,6 +43,24 @@ class AuthViewModel(private val authRepository: AuthRepository) : ViewModel() {
             }
         }
     }
+
+//     Đăng nhập bằng Google
+fun signInWithGoogle(account: GoogleSignInAccount, onResult: (Boolean, String?) -> Unit) {
+    viewModelScope.launch {
+        val credential: AuthCredential = GoogleAuthProvider.getCredential(account.idToken, null)
+        authState = AuthState.Loading
+        authRepository.loginWithGoogle(credential) { success, role ->
+            if (success) {
+                authState = AuthState.Authenticated(role ?: "customer")
+                onResult(true, role ?: "customer")
+            } else {
+                authState = AuthState.Error("Đăng nhập Google thất bại.")
+                onResult(false, "customer")
+            }
+        }
+    }
+}
+
 
     fun signOut() {
         authRepository.logout()

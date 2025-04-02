@@ -1,6 +1,7 @@
 package com.example.nhatro24_7.data.repository
 
 import com.example.nhatro24_7.data.model.User
+import com.google.firebase.auth.AuthCredential
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
@@ -32,6 +33,25 @@ class AuthRepository {
     suspend fun loginUser(email: String, password: String, onComplete: (Boolean, String?) -> Unit) {
         try {
             auth.signInWithEmailAndPassword(email, password).await()
+            val role = fetchUserRole()
+            onComplete(true, role)
+        } catch (e: Exception) {
+            onComplete(false, null)
+        }
+    }
+
+    suspend fun loginWithGoogle(credential: AuthCredential, onComplete: (Boolean, String?) -> Unit) {
+        try {
+            val authResult = auth.signInWithCredential(credential).await()
+
+            val userId = authResult.user?.uid
+            val user = db.collection("users").document(userId!!).get().await()
+
+            if (!user.exists()) {
+                val newUser = User(id = userId, email = authResult.user?.email ?: "", username = authResult.user?.displayName ?: "", role = "customer")
+                db.collection("users").document(userId).set(newUser).await()
+            }
+
             val role = fetchUserRole()
             onComplete(true, role)
         } catch (e: Exception) {
