@@ -35,6 +35,8 @@ import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.firestore.FirebaseFirestore
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.Image
+import com.google.firebase.auth.FirebaseUser
+import com.google.firebase.auth.OAuthProvider
 
 @Composable
 fun RegisterScreen(onLoginClick: () -> Unit) {
@@ -48,6 +50,10 @@ fun RegisterScreen(onLoginClick: () -> Unit) {
 
     val auth = FirebaseAuth.getInstance()
     val db = FirebaseFirestore.getInstance()
+
+    val githubProvider = OAuthProvider.newBuilder("github.com")
+        .setScopes(listOf("user:email"))
+        .build()
 
 
     val googleSignInClient = remember {
@@ -108,6 +114,59 @@ fun RegisterScreen(onLoginClick: () -> Unit) {
         }
     }
 
+    // Xử lý đăng ký GitHub
+    fun handleGitHubSignIn(user1: FirebaseUser?) {
+        auth.startActivityForSignInWithProvider(context as Activity, githubProvider)
+            .addOnCompleteListener { task ->
+                if (task.isSuccessful) {
+                    val user = auth.currentUser
+                    user?.let {
+                        val userId = it.uid
+                        val userData = hashMapOf(
+                            "username" to username,
+                            "email" to email,
+                            "role" to "customer"
+                        )
+                        db.collection("users").document(userId).set(userData)
+                            .addOnSuccessListener {
+                                Toast.makeText(context, "Đăng ký GitHub thành công!", Toast.LENGTH_SHORT).show()
+                                onLoginClick()
+                            }
+                            .addOnFailureListener {
+                                errorMessage = "Lỗi khi lưu dữ liệu: ${it.message}"
+                            }
+                    }
+                } else {
+                    errorMessage = task.exception?.message ?: "Đăng ký GitHub thất bại."
+                }
+            }
+    }
+
+    // Đăng ký qua GitHub
+    val launcherGitHub = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val user = null
+            handleGitHubSignIn(user)
+        } else {
+            errorMessage = "Đăng nhập GitHub thất bại"
+        }
+    }
+
+    fun signInWithGitHub() {
+        val githubProvider = OAuthProvider.newBuilder("github.com")
+            .setScopes(listOf("user:email"))
+            .build()
+
+        auth.startActivityForSignInWithProvider(context as Activity, githubProvider)
+            .addOnCompleteListener { task ->
+                if (task.isSuccessful) {
+                    val user = task.result?.user
+                    handleGitHubSignIn(user)
+                } else {
+                    errorMessage = task.exception?.message ?: "Đăng ký GitHub thất bại."
+                }
+            }
+    }
 
     fun registerUser() {
         if (email.isBlank() || username.isBlank() || password.isBlank() || confirmPassword.isBlank()) {
@@ -275,8 +334,8 @@ fun RegisterScreen(onLoginClick: () -> Unit) {
                         .size(40.dp)
                         .clickable(onClick = { signInWithGoogle() })
                 )
-                Image(painter = painterResource(R.drawable.fb), contentDescription = "Facebook", modifier = Modifier.size(40.dp))
-                Image(painter = painterResource(R.drawable.github), contentDescription = "Github", modifier = Modifier.size(40.dp))
+                Image(painter = painterResource(R.drawable.fb), contentDescription = "Facebook", modifier = Modifier.size(40.dp)  )
+                Image(painter = painterResource(R.drawable.github), contentDescription = "Github", modifier = Modifier.size(40.dp) .clickable(onClick = { signInWithGitHub() }))
 
             }
 

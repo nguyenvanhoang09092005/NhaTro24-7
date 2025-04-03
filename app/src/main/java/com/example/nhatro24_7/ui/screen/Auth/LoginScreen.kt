@@ -1,6 +1,7 @@
 package com.example.nhatro24_7.ui.screen.Auth
 
 import android.app.Activity
+import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.*
@@ -27,12 +28,16 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.nhatro24_7.R
 import com.example.nhatro24_7.viewmodel.AuthViewModel
+import com.github.scribejava.apis.GitHubApi
+import com.github.scribejava.core.builder.ServiceBuilder
+import com.github.scribejava.core.oauth.OAuth20Service
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.firebase.auth.AuthCredential
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.GoogleAuthProvider
+import com.google.firebase.auth.OAuthProvider
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -49,6 +54,7 @@ fun LoginScreen(
     val focusManager = LocalFocusManager.current
     val context = LocalContext.current
     val auth = FirebaseAuth.getInstance()
+
 
     val googleSignInClient = remember {
         val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
@@ -75,6 +81,52 @@ fun LoginScreen(
                 }
             }
         }
+    }
+
+    // Đăng nhập Github
+    val githubProvider = OAuthProvider.newBuilder("github.com").build()
+    val githubAuth = FirebaseAuth.getInstance()
+
+    val githubLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            githubAuth.startActivityForSignInWithProvider(context as Activity, githubProvider)
+                .addOnSuccessListener { authResult ->
+                    val credential = authResult.credential
+                    credential?.let {
+                        viewModel.signUpWithGithub(it) { success, role ->
+                            if (success) {
+                                onNavigateToHome(role)
+                            } else {
+                                loginError = "Đăng nhập GitHub thất bại"
+                            }
+                        }
+                    }
+                }
+                .addOnFailureListener {
+                    loginError = "Đăng nhập GitHub thất bại: ${it.message}"
+                }
+        }
+    }
+
+    fun signInWithGithub() {
+        val activity = context as? Activity ?: return
+
+        auth.startActivityForSignInWithProvider(activity, githubProvider)
+            .addOnSuccessListener { authResult ->
+                val credential = authResult.credential
+                credential?.let {
+                    viewModel.signUpWithGithub(it) { success, role ->
+                        if (success) {
+                            onNavigateToHome(role)
+                        } else {
+                            loginError = "Đăng nhập GitHub thất bại"
+                        }
+                    }
+                }
+            }
+            .addOnFailureListener {
+                loginError = "Đăng nhập GitHub thất bại: ${it.message}"
+            }
     }
 
 
@@ -197,7 +249,14 @@ fun LoginScreen(
                     launcher.launch(googleSignInClient.signInIntent) 
                 })
                Image(painter = painterResource(R.drawable.fb), contentDescription = "Facebook", modifier = Modifier.size(40.dp))
-                Image(painter = painterResource(R.drawable.github), contentDescription = "Github", modifier = Modifier.size(40.dp))
+                Image(
+                    painter = painterResource(R.drawable.github),
+                    contentDescription = "GitHub",
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clickable { signInWithGithub() }
+                )
+
             }
 
             Spacer(modifier = Modifier.height(16.dp))

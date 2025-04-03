@@ -59,6 +59,28 @@ class AuthRepository {
         }
     }
 
+    suspend fun loginWithGithub(credential: AuthCredential, onComplete: (Boolean, String?) -> Unit) {
+        try {
+            val authResult = auth.signInWithCredential(credential).await()
+            val userId = authResult.user?.uid ?: return onComplete(false, null)
+            val email = authResult.user?.email ?: ""
+            val username = authResult.user?.displayName ?: ""
+
+            val userDoc = db.collection("users").document(userId).get().await()
+            var role = "customer"
+
+            if (!userDoc.exists()) {
+                val newUser = User(id = userId, email = email, username = username, role = role)
+                db.collection("users").document(userId).set(newUser).await()
+            } else {
+                role = userDoc.getString("role") ?: "customer"
+            }
+
+            onComplete(true, role)
+        } catch (e: Exception) {
+            onComplete(false, null)
+        }
+    }
 
     suspend fun fetchUserRole(): String {
         val firebaseUser = auth.currentUser ?: return "guest"

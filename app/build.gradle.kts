@@ -72,6 +72,9 @@ dependencies {
     implementation("com.google.firebase:firebase-firestore-ktx")
     implementation("com.google.firebase:firebase-storage-ktx")
     implementation("com.google.android.gms:play-services-auth:21.3.0")
+    implementation("com.github.scribejava:scribejava-core:8.3.0")
+    implementation("com.github.scribejava:scribejava-apis:8.3.0")
+    implementation("com.squareup.okhttp3:okhttp:4.9.3")
 
     // Hilt
     implementation("com.google.dagger:hilt-android:2.44")

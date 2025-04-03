@@ -61,6 +61,22 @@ fun signInWithGoogle(account: GoogleSignInAccount, onResult: (Boolean, String?) 
     }
 }
 
+    //     Đăng nhập bằng Github
+    fun signUpWithGithub(credential: AuthCredential, onResult: (Boolean, String) -> Unit) {
+        viewModelScope.launch {
+            authState = AuthState.Loading
+            authRepository.loginWithGithub(credential) { success, role ->
+                if (success) {
+                    authState = AuthState.Authenticated(role ?: "customer")
+                    onResult(true, role ?: "customer")
+                } else {
+                    authState = AuthState.Error("Đăng nhập GitHub thất bại.")
+                    onResult(false, "customer")
+                }
+            }
+        }
+    }
+
 
     fun signOut() {
         authRepository.logout()
