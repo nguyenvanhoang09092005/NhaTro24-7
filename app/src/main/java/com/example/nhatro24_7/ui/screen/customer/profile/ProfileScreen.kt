@@ -137,6 +137,8 @@ fun ProfileScreen(
 
                         .background(MaterialTheme.colorScheme.surface)
                 ) {
+
+                    Spacer(modifier = Modifier.height(22.dp))
                 ProfileOption(Icons.Default.Person, "Trang cá nhân") {
                     navController.navigate("profile_detail")
                 }
@@ -206,6 +208,13 @@ fun ProfileScreen(
                     }
 
                 }
+
+                    Spacer(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(40.dp)
+                            .background(MaterialTheme.colorScheme.surface)
+                    )
             }
         }
     }

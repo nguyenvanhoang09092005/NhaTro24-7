@@ -10,6 +10,10 @@ import com.example.nhatro24_7.ui.screen.Auth.RegisterScreen
 import com.example.nhatro24_7.ui.screen.Auth.SplashScreen
 import com.example.nhatro24_7.ui.screen.customer.home.CustomerHomeScreen
 import com.example.nhatro24_7.ui.screen.customer.profile.*
+import com.example.nhatro24_7.ui.screen.customer.profile.account.ChangePasswordScreen
+import com.example.nhatro24_7.ui.screen.customer.profile.account.DeleteAccountScreen
+import com.example.nhatro24_7.ui.screen.customer.profile.account.LinkAccountsScreen
+import com.example.nhatro24_7.ui.screen.customer.profile.account.VerifyAccountScreen
 import com.example.nhatro24_7.ui.screen.landlord.LandlordScreen
 import com.example.nhatro24_7.viewmodel.AuthViewModel
 
@@ -98,6 +102,7 @@ fun AppNavigation(
             LikedHistoryScreen(navController = navController)
         }
 
+
 //        composable("booking_history") {
 //            BookingHistoryScreen(navController = navController)
 //        }
@@ -111,10 +116,10 @@ fun AppNavigation(
 //        }
 
         // Account settings (dummy screens)
-//        composable("change_password") { ChangePasswordScreen(navController = navController) }
-//        composable("verify_account") { VerifyAccountScreen(navController = navController) }
-//        composable("link_accounts") { LinkAccountsScreen(navController = navController) }
-//        composable("delete_account") { DeleteAccountScreen(navController = navController) }
+        composable("change_password") { ChangePasswordScreen(navController = navController) }
+        composable("verify_account") { VerifyAccountScreen(navController = navController) }
+        composable("link_accounts") { LinkAccountsScreen(navController = navController) }
+        composable("delete_account") { DeleteAccountScreen(navController = navController) }
 
         // Roles
         composable("landlord") {
