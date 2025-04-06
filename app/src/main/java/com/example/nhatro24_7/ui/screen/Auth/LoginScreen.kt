@@ -26,6 +26,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewModelScope
 import com.example.nhatro24_7.R
 import com.example.nhatro24_7.viewmodel.AuthViewModel
 import com.github.scribejava.apis.GitHubApi
@@ -38,6 +39,7 @@ import com.google.firebase.auth.AuthCredential
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.auth.OAuthProvider
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -128,6 +130,7 @@ fun LoginScreen(
                 loginError = "Đăng nhập GitHub thất bại: ${it.message}"
             }
     }
+
 
 
     Box(

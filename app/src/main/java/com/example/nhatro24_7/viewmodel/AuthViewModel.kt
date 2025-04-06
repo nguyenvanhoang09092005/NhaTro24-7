@@ -5,10 +5,16 @@ import androidx.lifecycle.viewModelScope
 import com.example.nhatro24_7.data.repository.AuthRepository
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 import com.google.firebase.auth.AuthCredential
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.GoogleAuthProvider
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
-class AuthViewModel(private val authRepository: AuthRepository) : ViewModel() {
+@HiltViewModel
+class AuthViewModel @Inject constructor(
+    private val authRepository: AuthRepository
+) : ViewModel() {
 
     var authState: AuthState = AuthState.Idle
         private set
@@ -28,7 +34,6 @@ class AuthViewModel(private val authRepository: AuthRepository) : ViewModel() {
         }
     }
 
-
     fun signIn(email: String, password: String, onResult: (Boolean, String) -> Unit) {
         viewModelScope.launch {
             authState = AuthState.Loading
@@ -44,24 +49,22 @@ class AuthViewModel(private val authRepository: AuthRepository) : ViewModel() {
         }
     }
 
-//     Đăng nhập bằng Google
-fun signInWithGoogle(account: GoogleSignInAccount, onResult: (Boolean, String?) -> Unit) {
-    viewModelScope.launch {
-        val credential: AuthCredential = GoogleAuthProvider.getCredential(account.idToken, null)
-        authState = AuthState.Loading
-        authRepository.loginWithGoogle(credential) { success, role ->
-            if (success) {
-                authState = AuthState.Authenticated(role ?: "customer")
-                onResult(true, role ?: "customer")
-            } else {
-                authState = AuthState.Error("Đăng nhập Google thất bại.")
-                onResult(false, "customer")
+    fun signInWithGoogle(account: GoogleSignInAccount, onResult: (Boolean, String?) -> Unit) {
+        viewModelScope.launch {
+            val credential: AuthCredential = GoogleAuthProvider.getCredential(account.idToken, null)
+            authState = AuthState.Loading
+            authRepository.loginWithGoogle(credential) { success, role ->
+                if (success) {
+                    authState = AuthState.Authenticated(role ?: "customer")
+                    onResult(true, role ?: "customer")
+                } else {
+                    authState = AuthState.Error("Đăng nhập Google thất bại.")
+                    onResult(false, "customer")
+                }
             }
         }
     }
-}
 
-    //     Đăng nhập bằng Github
     fun signUpWithGithub(credential: AuthCredential, onResult: (Boolean, String) -> Unit) {
         viewModelScope.launch {
             authState = AuthState.Loading
@@ -77,10 +80,22 @@ fun signInWithGoogle(account: GoogleSignInAccount, onResult: (Boolean, String?) 
         }
     }
 
+    fun checkIfLoggedIn(onLoggedIn: (String) -> Unit) {
+        viewModelScope.launch {
+            val user = FirebaseAuth.getInstance().currentUser
+            if (user != null) {
+                val role = authRepository.fetchUserRole()
+                onLoggedIn(role)
+            } else {
+                onLoggedIn("guest") // Quan trọng: Luôn gọi callback để tránh kẹt màn hình splash
+            }
+        }
+    }
 
-    fun signOut() {
+    fun signOut(onDone: () -> Unit = {}) {
         authRepository.logout()
         authState = AuthState.Idle
+        onDone()
     }
 }
 

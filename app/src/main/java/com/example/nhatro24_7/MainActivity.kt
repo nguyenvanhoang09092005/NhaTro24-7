@@ -6,29 +6,61 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.compose.rememberNavController
 import com.example.nhatro24_7.data.repository.AuthRepository
+import com.example.nhatro24_7.data.DataStore.SettingsDataStore
 import com.example.nhatro24_7.navigation.AppNavigation
 import com.example.nhatro24_7.ui.theme.NhaTro24_7Theme
 import com.example.nhatro24_7.viewmodel.AuthViewModel
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.launch
+import androidx.hilt.navigation.compose.hiltViewModel
+
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            NhaTro24_7Theme {
-                val navController = rememberNavController()
+            val context = LocalContext.current
+            val settingsStore = SettingsDataStore(context)
+            val coroutineScope = rememberCoroutineScope()
 
-                val authViewModel: AuthViewModel = AuthViewModel(AuthRepository())
+            // Đọc giá trị từ DataStore
+            val isDarkMode by settingsStore.isDarkMode.collectAsState(initial = false)
+            val selectedLanguage by settingsStore.selectedLanguage.collectAsState(initial = "Tiếng Việt")
 
+            val navController = rememberNavController()
+            val authViewModel: AuthViewModel = hiltViewModel()
+
+
+            // Áp dụng theme
+            NhaTro24_7Theme(darkTheme = isDarkMode) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    AppNavigation(navController = navController, authViewModel = authViewModel)
+                    AppNavigation(
+                        navController = navController,
+                        authViewModel = authViewModel,
+                        isDarkTheme = isDarkMode,
+                        selectedLanguage = selectedLanguage,
+                        onToggleTheme = { enabled ->
+                            coroutineScope.launch {
+                                settingsStore.saveDarkMode(enabled)
+                            }
+                        },
+                        onLanguageChange = { lang ->
+                            coroutineScope.launch {
+                                settingsStore.saveLanguage(lang)
+                            }
+                        }
+                    )
                 }
             }
         }

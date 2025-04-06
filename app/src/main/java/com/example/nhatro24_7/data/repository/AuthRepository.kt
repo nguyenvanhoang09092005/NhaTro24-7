@@ -5,8 +5,9 @@ import com.google.firebase.auth.AuthCredential
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
+import javax.inject.Inject
 
-class AuthRepository {
+class AuthRepository @Inject constructor() {
     private val auth: FirebaseAuth = FirebaseAuth.getInstance()
     private val db: FirebaseFirestore = FirebaseFirestore.getInstance()
 
@@ -22,9 +23,9 @@ class AuthRepository {
             val userId = result.user?.uid ?: throw Exception("User ID is null")
 
             val user = User(id = userId, email = email, username = username, role = role)
-            db.collection("users").document(userId).set(user).await() // Lưu vào Firestore
+            db.collection("users").document(userId).set(user).await()
 
-            onComplete(true, role) // Trả về role
+            onComplete(true, role)
         } catch (e: Exception) {
             onComplete(false, e.localizedMessage)
         }

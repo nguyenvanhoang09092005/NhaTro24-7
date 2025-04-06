@@ -8,9 +8,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.example.nhatro24_7.ui.screen.customer.component.CustomButton
+import com.example.nhatro24_7.viewmodel.AuthViewModel
 
 @Composable
-fun AdminScreen(navController: NavController) {
+fun AdminScreen(navController: NavController, viewModel: AuthViewModel) {
     Column(
         modifier = Modifier.fillMaxSize(),
         verticalArrangement = Arrangement.Center,
@@ -20,12 +22,15 @@ fun AdminScreen(navController: NavController) {
 
         Spacer(modifier = Modifier.height(20.dp))
 
-        Button(onClick = {
-            navController.navigate("login") {
-                popUpTo("login") { inclusive = true }
+        CustomButton(
+            text = "Đăng xuất",
+            onClick = {
+                viewModel.signOut()
+                navController.navigate("login") {
+                    popUpTo("admin") { inclusive = true }
+
+                }
             }
-        }) {
-            Text(text = "Đăng xuất")
-        }
+        )
     }
 }
