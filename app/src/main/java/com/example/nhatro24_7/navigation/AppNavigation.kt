@@ -91,7 +91,9 @@ fun AppNavigation(
         composable("activity_history") {
             ActivityHistoryScreen(navController = navController)
         }
-
+        composable("profile_detail") {
+            UserProfileScreen(viewModel = authViewModel)
+        }
         composable("liked_history") {
             LikedHistoryScreen(navController = navController)
         }

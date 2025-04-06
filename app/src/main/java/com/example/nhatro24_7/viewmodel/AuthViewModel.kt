@@ -92,6 +92,11 @@ class AuthViewModel @Inject constructor(
         }
     }
 
+    fun getCurrentUserId(): String? {
+        return FirebaseAuth.getInstance().currentUser?.uid
+    }
+
+
     fun signOut(onDone: () -> Unit = {}) {
         authRepository.logout()
         authState = AuthState.Idle

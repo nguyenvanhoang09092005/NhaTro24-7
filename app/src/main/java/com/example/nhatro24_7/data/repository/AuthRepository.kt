@@ -45,11 +45,15 @@ class AuthRepository @Inject constructor() {
         try {
             val authResult = auth.signInWithCredential(credential).await()
 
-            val userId = authResult.user?.uid
-            val user = db.collection("users").document(userId!!).get().await()
+            val userId = authResult.user?.uid ?: return onComplete(false, null)
+            val email = authResult.user?.email ?: ""
+            val rawUsername = authResult.user?.displayName
+            val username = if (!rawUsername.isNullOrBlank()) rawUsername else "Username"
+
+            val user = db.collection("users").document(userId).get().await()
 
             if (!user.exists()) {
-                val newUser = User(id = userId, email = authResult.user?.email ?: "", username = authResult.user?.displayName ?: "", role = "customer")
+                val newUser = User(id = userId, email = email, username = username, role = "customer")
                 db.collection("users").document(userId).set(newUser).await()
             }
 
@@ -65,7 +69,8 @@ class AuthRepository @Inject constructor() {
             val authResult = auth.signInWithCredential(credential).await()
             val userId = authResult.user?.uid ?: return onComplete(false, null)
             val email = authResult.user?.email ?: ""
-            val username = authResult.user?.displayName ?: ""
+            val rawUsername = authResult.user?.displayName
+            val username = if (!rawUsername.isNullOrBlank()) rawUsername else "Username"
 
             val userDoc = db.collection("users").document(userId).get().await()
             var role = "customer"

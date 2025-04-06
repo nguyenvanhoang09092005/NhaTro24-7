@@ -86,6 +86,9 @@ dependencies {
     // Material Icons (đã kiểm tra version)
     implementation("androidx.compose.material:material-icons-extended:1.6.4")
 
+    implementation("com.squareup.okhttp3:okhttp:4.10.0")
+
+
     implementation("androidx.datastore:datastore-preferences:1.0.0")
 
     // Compose

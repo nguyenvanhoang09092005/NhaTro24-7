@@ -25,6 +25,8 @@ import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
 import com.example.nhatro24_7.ui.screen.customer.component.BottomNavBar
 import com.example.nhatro24_7.viewmodel.AuthViewModel
+import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.tasks.await
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -43,6 +45,19 @@ fun ProfileScreen(
     var isAccountExpanded by remember { mutableStateOf(false) }
     var isLanguageDropdownExpanded by remember { mutableStateOf(false) }
     var isNotificationEnabled by remember { mutableStateOf(true) }
+    var username by remember { mutableStateOf("Người dùng") }
+    var avatarUrl by remember { mutableStateOf("") }
+
+
+    LaunchedEffect(Unit) {
+        val userId = viewModel.getCurrentUserId()
+        if (userId != null) {
+            val doc = FirebaseFirestore.getInstance().collection("users").document(userId).get().await()
+            username = doc.getString("username") ?: "Người dùng"
+            avatarUrl = doc.getString("avatarUrl") ?: ""
+        }
+    }
+
 
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         avatarUri = uri
@@ -68,9 +83,12 @@ fun ProfileScreen(
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Box {
-                        if (avatarUri != null) {
+
+                        val imageToDisplay = avatarUri?.toString() ?: if (avatarUrl.isNotBlank()) avatarUrl else null
+
+                        if (imageToDisplay != null) {
                             Image(
-                                painter = rememberAsyncImagePainter(avatarUri),
+                                painter = rememberAsyncImagePainter(imageToDisplay),
                                 contentDescription = "Avatar",
                                 contentScale = ContentScale.Crop,
                                 modifier = Modifier
@@ -88,6 +106,7 @@ fun ProfileScreen(
                                 tint = Color.Gray
                             )
                         }
+
 
 //                        IconButton(
 //                            onClick = { launcher.launch("image/*") },
@@ -107,7 +126,8 @@ fun ProfileScreen(
                     }
 
                     Spacer(modifier = Modifier.height(8.dp))
-                    Text("May Illy", fontSize = 18.sp, color = Color.White)
+                    Text(username, fontSize = 18.sp, color = Color.White)
+
                 }
             }
 
@@ -117,7 +137,9 @@ fun ProfileScreen(
 
                         .background(MaterialTheme.colorScheme.surface)
                 ) {
-                ProfileOption(Icons.Default.Person, "Trang cá nhân") { /* TODO */ }
+                ProfileOption(Icons.Default.Person, "Trang cá nhân") {
+                    navController.navigate("profile_detail")
+                }
 
                 ExpandableSection(
                     title = "Quản lý hoạt động",
