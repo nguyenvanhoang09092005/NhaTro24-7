@@ -76,7 +76,10 @@ dependencies {
     implementation("com.github.scribejava:scribejava-apis:8.3.0")
     implementation("com.squareup.okhttp3:okhttp:4.9.3")
 
-    implementation("io.coil-kt:coil-compose:2.4.0")
+    implementation("io.coil-kt:coil-compose:2.6.0")
+    implementation("androidx.compose.foundation:foundation-layout:1.6.6")
+    implementation("com.google.accompanist:accompanist-permissions:0.34.0")
+    implementation("com.google.accompanist:accompanist-flowlayout:0.35.0-alpha")
 
     // Hilt
     implementation("com.google.dagger:hilt-android:2.48")

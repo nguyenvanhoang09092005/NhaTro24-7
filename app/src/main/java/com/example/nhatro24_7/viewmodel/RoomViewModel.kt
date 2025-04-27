@@ -35,16 +35,18 @@ class RoomViewModel : ViewModel() {
             }
     }
 
+    fun addRoom(room: Room, onResult: (Boolean) -> Unit) {
+        val db = FirebaseFirestore.getInstance()
+        val docRef = db.collection("rooms").document()
 
-    suspend fun addRoom(room: Room): Boolean {
-        return try {
-            val docRef = db.collection("rooms").document()
-            val roomWithId = room.copy(id = docRef.id)
-            docRef.set(roomWithId).await()
-            true
-        } catch (e: Exception) {
-            e.printStackTrace()
-            false
-        }
+        val roomWithId = room.copy(id = docRef.id)
+
+        docRef.set(roomWithId)
+            .addOnSuccessListener {
+                onResult(true)
+            }
+            .addOnFailureListener {
+                onResult(false)
+            }
     }
 }

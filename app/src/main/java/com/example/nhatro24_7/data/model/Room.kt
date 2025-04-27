@@ -10,7 +10,8 @@ data class Room(
     val roomType: String = "",
     val roomCategory: String = "",
     val amenities: List<String> = emptyList(),
+    val mainImage: String = "",
+    val images: List<String> = emptyList(),
     val owner_id: Int = 0,
     val created_at: Long = 0L
 )
-
