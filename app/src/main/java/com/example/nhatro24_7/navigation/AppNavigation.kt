@@ -9,6 +9,7 @@ import com.example.nhatro24_7.ui.screen.Auth.LoginScreen
 import com.example.nhatro24_7.ui.screen.Auth.RegisterScreen
 import com.example.nhatro24_7.ui.screen.Auth.SplashScreen
 import com.example.nhatro24_7.ui.screen.customer.home.CustomerHomeScreen
+import com.example.nhatro24_7.ui.screen.customer.home.RoomDetailScreen
 import com.example.nhatro24_7.ui.screen.customer.profile.*
 import com.example.nhatro24_7.ui.screen.customer.profile.account.ChangePasswordScreen
 import com.example.nhatro24_7.ui.screen.customer.profile.account.DeleteAccountScreen
@@ -84,6 +85,13 @@ fun AppNavigation(
         composable(Routes.CUSTOMER_HOME) {
             CustomerHomeScreen(navController = navController, viewModel = authViewModel)
         }
+
+        composable(Routes.ROOM_DETAIL) { backStackEntry ->
+            val roomId = backStackEntry.arguments?.getString("roomId")
+            RoomDetailScreen(roomId, navController, RoomViewModel())
+        }
+
+
         composable(Routes.CUSTOMER_PROFILE) {
             ProfileScreen(
                 navController = navController,
@@ -111,6 +119,10 @@ fun AppNavigation(
         composable(Routes.LANDLORD_ADD_POST) {
             AddRoomScreen(navController = navController, roomViewModel = RoomViewModel())
         }
+
+
+
+
 
         // Account Settings
         composable(Routes.CHANGE_PASSWORD) {

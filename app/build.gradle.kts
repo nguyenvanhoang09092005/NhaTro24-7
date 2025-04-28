@@ -80,6 +80,7 @@ dependencies {
     implementation("androidx.compose.foundation:foundation-layout:1.6.6")
     implementation("com.google.accompanist:accompanist-permissions:0.34.0")
     implementation("com.google.accompanist:accompanist-flowlayout:0.35.0-alpha")
+    implementation ("com.google.accompanist:accompanist-flowlayout:0.34.0")
 
     // Hilt
     implementation("com.google.dagger:hilt-android:2.48")

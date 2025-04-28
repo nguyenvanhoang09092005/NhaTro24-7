@@ -1,5 +1,6 @@
 package com.example.nhatro24_7.ui.screen.landlord.room
 
+import android.R.attr.description
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -45,6 +46,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import coil.compose.AsyncImage
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.platform.LocalConfiguration
@@ -67,6 +69,18 @@ fun AddRoomScreen(navController: NavController, roomViewModel: RoomViewModel) {
     val imageList = remember { mutableStateListOf<String>() }
     val mainImage = remember { mutableStateOf("") }
     val scrollState = rememberScrollState()
+    var description by remember { mutableStateOf("") }
+
+
+    // Nhận dữ liệu địa chỉ trả về từ màn hình chọn vị trí
+    navController.currentBackStackEntry
+        ?.savedStateHandle
+        ?.getLiveData<String>("selected_address")
+        ?.observeAsState()
+        ?.value?.let { selectedAddress ->
+            address = selectedAddress
+            navController.currentBackStackEntry?.savedStateHandle?.remove<String>("selected_address")
+        }
 
     Scaffold(
         topBar = {
@@ -98,7 +112,7 @@ fun AddRoomScreen(navController: NavController, roomViewModel: RoomViewModel) {
                             }  else {
                                 val room = Room(
                                     title = "Tin đăng mới",
-                                    description = "Tin đăng tự động",
+                                    description = description,
                                     price = price.toDoubleOrNull() ?: 0.0,
                                     area = area.toDoubleOrNull() ?: 0.0,
                                     location = address,
@@ -148,11 +162,13 @@ fun AddRoomScreen(navController: NavController, roomViewModel: RoomViewModel) {
 
             when (currentStep) {
                 0 -> InfoStep(
+                    navController,
                     roomType, { roomType = it },
                     roomCategory, { roomCategory = it },
                     address, { address = it },
                     price, { price = it },
                     area, { area = it },
+                    description, { description = it },
                     selectedAmenities
                 )
                 1 -> ImageUploadStep(mainImage, imageList)
@@ -215,12 +231,15 @@ private fun RoomViewModel.addRoomToFirebase(room: Room) {}
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun InfoStep(
+    navController: NavController,
     roomType: String, onRoomTypeChange: (String) -> Unit,
     roomCategory: String, onRoomCategoryChange: (String) -> Unit,
     address: String, onAddressChange: (String) -> Unit,
     price: String, onPriceChange: (String) -> Unit,
     area: String, onAreaChange: (String) -> Unit,
+    description: String, onDescriptionChange: (String) -> Unit,
     selectedAmenities: SnapshotStateList<String>
+
 ) {
     val amenities = listOf(
         "Wifi", "WC riêng", "Giữ xe", "Điện",
@@ -272,15 +291,17 @@ fun InfoStep(
                     fontSize = 14.sp,
                     color = MaterialTheme.colorScheme.onSurface
                 )
-                TextButton(onClick = { /* Xử lý chọn địa điểm trên bản đồ */ }) {
+
+                //chọn vị trí
+                TextButton(onClick = {
+
+                }) {
                     Icon(Icons.Default.LocationOn, contentDescription = "Chọn vị trí", modifier = Modifier.size(16.dp))
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text(
-                        text = "Chọn vị trí",
-                        fontSize = 14.sp,
-                        color = MaterialTheme.colorScheme.primary
-                    )
+                    Text("Chọn vị trí", fontSize = 14.sp, color = MaterialTheme.colorScheme.primary)
                 }
+
+
             }
 
             OutlinedTextField(
@@ -346,6 +367,26 @@ fun InfoStep(
                 )
             }
         }
+
+        // Nhập mô tả
+        Column(modifier = Modifier.fillMaxWidth()) {
+            Text(
+                text = "Mô tả",
+                fontSize = 14.sp,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+
+            OutlinedTextField(
+                value = description,
+                onValueChange = onDescriptionChange,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(120.dp),
+                placeholder = { Text("Nhập mô tả chi tiết") }
+            )
+
+        }
+
     }
 }
 

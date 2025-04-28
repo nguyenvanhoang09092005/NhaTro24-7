@@ -140,7 +140,7 @@ fun ProfileScreen(
 
                     Spacer(modifier = Modifier.height(22.dp))
                 ProfileOption(Icons.Default.Person, "Trang cá nhân") {
-                    navController.navigate("profile_detail")
+                    navController.navigate("customer_profile_detail")
                 }
 
                 ExpandableSection(

@@ -18,6 +18,7 @@ object Routes {
     const val CUSTOMER_HISTORY = "customer_activity_history"
     const val CUSTOMER_PROFILE_DETAIL = "customer_profile_detail"
     const val CUSTOMER_LIKED_HISTORY = "customer_liked_history"
+    const val ROOM_DETAIL = "roomDetail/{roomId}"
 
 
     // Landlord
