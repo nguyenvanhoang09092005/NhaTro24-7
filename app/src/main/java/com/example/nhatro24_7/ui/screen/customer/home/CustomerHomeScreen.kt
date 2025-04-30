@@ -18,7 +18,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.example.nhatro24_7.data.model.Room
 import com.example.nhatro24_7.ui.screen.customer.component.BottomNavBar
 import com.example.nhatro24_7.ui.screen.customer.home.components.RoomItem
 import com.example.nhatro24_7.viewmodel.AuthViewModel
@@ -26,8 +25,6 @@ import com.example.nhatro24_7.viewmodel.RoomViewModel
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.filled.Apartment
@@ -35,14 +32,12 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.MeetingRoom
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.List
-import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.text.font.FontWeight
+import com.example.nhatro24_7.data.model.SavedRoom
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -62,10 +57,24 @@ fun CustomerHomeScreen(
     }
 
     val isFilterApplied = selectedRoomType != "Tất cả" || selectedRoomCategory != "Tất cả"
+    val snackbarHostState = remember { SnackbarHostState() }
+    val coroutineScope = rememberCoroutineScope()
+    val savedRoomIds = remember { mutableStateListOf<String>() }
+    val userId = viewModel.getCurrentUserId()
+    LaunchedEffect(userId) {
+        if (userId != null) {
+            roomViewModel.getSavedRooms(userId) { rooms ->
+                savedRoomIds.clear()
+                savedRoomIds.addAll(rooms.map { it.id })
+            }
+        }
+    }
 
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         bottomBar = {
+
             BottomNavBar(navController = navController)
         },
         topBar = {
@@ -110,8 +119,46 @@ fun CustomerHomeScreen(
                     items(rooms.sortedByDescending { it.created_at }.take(10)) { room ->
                         RoomItem(
                             room = room,
-                            onClick = { navController.navigate("roomDetail/${room.id}") }
+                            isSaved = savedRoomIds.contains(room.id),
+                            onClick = { navController.navigate("roomDetail/${room.id}") },
+                            onToggleSave = {
+                                val userId = viewModel.getCurrentUserId()
+                                if (userId == null) {
+                                    coroutineScope.launch {
+                                        snackbarHostState.showSnackbar("Bạn cần đăng nhập để lưu phòng.")
+                                    }
+                                    return@RoomItem
+                                }
+
+                                val savedRoom = SavedRoom(userId = userId, roomId = room.id)
+
+                                if (savedRoomIds.contains(room.id)) {
+                                    // Nếu đã lưu, thì sẽ gỡ lưu
+                                    roomViewModel.unsaveRoom(savedRoom) { success ->
+                                        if (success) {
+                                            savedRoomIds.remove(room.id)
+                                            coroutineScope.launch {
+                                                snackbarHostState.showSnackbar("Đã bỏ lưu phòng.")
+                                            }
+                                        }
+                                    }
+                                } else {
+                                    // Nếu chưa lưu, thì sẽ lưu
+                                    roomViewModel.saveRoom(savedRoom) { success ->
+                                        if (success) {
+                                            savedRoomIds.add(room.id)
+                                            coroutineScope.launch {
+                                                snackbarHostState.showSnackbar("Đã lưu phòng.")
+                                            }
+                                        }
+                                    }
+                                }
+
+
+                            }
                         )
+
+
                     }
                 }
 
@@ -128,8 +175,46 @@ fun CustomerHomeScreen(
                     items(rooms.shuffled().take(10)) { room ->
                         RoomItem(
                             room = room,
-                            onClick = { navController.navigate("roomDetail/${room.id}") }
+                            isSaved = savedRoomIds.contains(room.id),
+                            onClick = { navController.navigate("roomDetail/${room.id}") },
+                            onToggleSave = {
+                                val userId = viewModel.getCurrentUserId()
+                                if (userId == null) {
+                                    coroutineScope.launch {
+                                        snackbarHostState.showSnackbar("Bạn cần đăng nhập để lưu phòng.")
+                                    }
+                                    return@RoomItem
+                                }
+
+                                val savedRoom = SavedRoom(userId = userId, roomId = room.id)
+
+                                if (savedRoomIds.contains(room.id)) {
+                                    // Nếu đã lưu, thì sẽ gỡ lưu
+                                    roomViewModel.unsaveRoom(savedRoom) { success ->
+                                        if (success) {
+                                            savedRoomIds.remove(room.id)
+                                            coroutineScope.launch {
+                                                snackbarHostState.showSnackbar("Đã bỏ lưu phòng.")
+                                            }
+                                        }
+                                    }
+                                } else {
+                                    // Nếu chưa lưu, thì sẽ lưu
+                                    roomViewModel.saveRoom(savedRoom) { success ->
+                                        if (success) {
+                                            savedRoomIds.add(room.id)
+                                            coroutineScope.launch {
+                                                snackbarHostState.showSnackbar("Đã lưu phòng.")
+                                            }
+                                        }
+                                    }
+                                }
+
+
+                            }
                         )
+
+
                     }
                 }
 
@@ -155,14 +240,52 @@ fun CustomerHomeScreen(
                 items(filteredRooms) { room ->
                     RoomItem(
                         room = room,
-                        onClick = { navController.navigate("roomDetail/${room.id}") }
+                        isSaved = savedRoomIds.contains(room.id),
+                        onClick = { navController.navigate("roomDetail/${room.id}") },
+                        onToggleSave = {
+                            val userId = viewModel.getCurrentUserId()
+                            if (userId == null) {
+                                coroutineScope.launch {
+                                    snackbarHostState.showSnackbar("Bạn cần đăng nhập để lưu phòng.")
+                                }
+                                return@RoomItem
+                            }
+
+                            val savedRoom = SavedRoom(userId = userId, roomId = room.id)
+
+                            if (savedRoomIds.contains(room.id)) {
+                                // Nếu đã lưu, thì sẽ gỡ lưu
+                                roomViewModel.unsaveRoom(savedRoom) { success ->
+                                    if (success) {
+                                        savedRoomIds.remove(room.id)
+                                        coroutineScope.launch {
+                                            snackbarHostState.showSnackbar("Đã bỏ lưu phòng.")
+                                        }
+                                    }
+                                }
+                            } else {
+                                // Nếu chưa lưu, thì sẽ lưu
+                                roomViewModel.saveRoom(savedRoom) { success ->
+                                    if (success) {
+                                        savedRoomIds.add(room.id)
+                                        coroutineScope.launch {
+                                            snackbarHostState.showSnackbar("Đã lưu phòng.")
+                                        }
+                                    }
+                                }
+                            }
+
+
+                        }
                     )
+
                 }
             }
         }
 
     }
 }
+
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable

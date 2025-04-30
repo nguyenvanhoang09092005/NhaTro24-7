@@ -15,6 +15,7 @@ import com.example.nhatro24_7.ui.screen.customer.profile.account.ChangePasswordS
 import com.example.nhatro24_7.ui.screen.customer.profile.account.DeleteAccountScreen
 import com.example.nhatro24_7.ui.screen.customer.profile.account.LinkAccountsScreen
 import com.example.nhatro24_7.ui.screen.customer.profile.account.VerifyAccountScreen
+import com.example.nhatro24_7.ui.screen.customer.saveroom.SavedRoomScreen
 import com.example.nhatro24_7.ui.screen.landlord.home.LandlordScreen
 import com.example.nhatro24_7.ui.screen.landlord.room.AddRoomScreen
 import com.example.nhatro24_7.viewmodel.AuthViewModel
@@ -89,6 +90,10 @@ fun AppNavigation(
         composable(Routes.ROOM_DETAIL) { backStackEntry ->
             val roomId = backStackEntry.arguments?.getString("roomId")
             RoomDetailScreen(roomId, navController, RoomViewModel())
+        }
+
+        composable(Routes.CUSTOMER_SAVED) {
+            SavedRoomScreen(navController, authViewModel, RoomViewModel())
         }
 
 

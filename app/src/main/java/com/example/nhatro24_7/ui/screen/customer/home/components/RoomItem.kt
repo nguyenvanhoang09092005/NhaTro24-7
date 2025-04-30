@@ -5,10 +5,15 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Bookmark
+import androidx.compose.material.icons.filled.BookmarkBorder
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.SquareFoot
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -24,7 +29,11 @@ import java.text.SimpleDateFormat
 import java.util.*
 
 @Composable
-fun RoomItem(room: Room, onClick: () -> Unit) {
+fun RoomItem( room: Room,
+              isSaved: Boolean,
+              onClick: () -> Unit,
+              onToggleSave: () -> Unit)
+ {
     val dateFormat = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
     val dateText = dateFormat.format(Date(room.created_at))
 
@@ -53,6 +62,20 @@ fun RoomItem(room: Room, onClick: () -> Unit) {
                         .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)),
                     contentScale = ContentScale.Crop
                 )
+
+                // Nút lưu phòng
+                IconButton(
+                    onClick = onToggleSave,
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(6.dp)
+                ) {
+                    Icon(
+                        imageVector = if (isSaved) Icons.Default.Bookmark else Icons.Default.BookmarkBorder,
+                        contentDescription = if (isSaved) "Đã lưu" else "Lưu phòng",
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                }
 
                 Box(
                     modifier = Modifier

@@ -102,6 +102,8 @@ class AuthViewModel @Inject constructor(
         authState = AuthState.Idle
         onDone()
     }
+
+
 }
 
 sealed class AuthState {
