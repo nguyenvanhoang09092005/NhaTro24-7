@@ -13,6 +13,6 @@ sealed class BottomNavItem(
     object Chats : BottomNavItem("landlord_chats", R.drawable.ic_chat, "Nhắn tin")
     object Post : BottomNavItem("landlord_add_post", R.drawable.ic_add, "Đăng tin")
     object Notification : BottomNavItem("landlord_notify", R.drawable.ic_notification, "Thông báo")
-    object Profile : BottomNavItem("landlord_profile", R.drawable.ic_profile, "Tài khoản")
+    object Profile : BottomNavItem("landlord_booking_requests", R.drawable.ic_profile, "Tài khoản")
 
 }

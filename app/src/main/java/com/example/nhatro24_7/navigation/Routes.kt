@@ -19,6 +19,9 @@ object Routes {
     const val CUSTOMER_PROFILE_DETAIL = "customer_profile_detail"
     const val CUSTOMER_LIKED_HISTORY = "customer_liked_history"
     const val ROOM_DETAIL = "roomDetail/{roomId}"
+    const val BOOKING_PENDING = "bookingPending"
+    const val PAYMENT_SCREEN = "paymentScreen"
+    const val CUSTOMER_NOTIFICATIONS = "customer_notifications"
 
 
     // Landlord
@@ -27,6 +30,10 @@ object Routes {
     const val LANDLORD_ADD_POST = "landlord_add_post"
     const val LANDLORD_NOTIFY = "landlord_notify"
     const val LANDLORD_PROFILE = "landlord_profile"
+    const val LANDLORD_BOOKING_REQUESTS = "landlord_booking_requests"
+    const val BOOKING_DETAIL = "booking_detail/{roomId}/{userId}"
+
+
 
     // Account settings
     const val CHANGE_PASSWORD = "change_password"

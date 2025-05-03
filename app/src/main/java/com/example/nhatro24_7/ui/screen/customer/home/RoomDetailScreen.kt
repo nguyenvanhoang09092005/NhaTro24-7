@@ -1,10 +1,12 @@
 package com.example.nhatro24_7.ui.screen.customer.home
 
+import android.widget.Toast
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -14,13 +16,17 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
+import com.example.nhatro24_7.data.model.Review
+import com.example.nhatro24_7.navigation.Routes
 import com.example.nhatro24_7.viewmodel.RoomViewModel
+import com.google.firebase.auth.FirebaseAuth
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -29,21 +35,100 @@ import java.util.*
 fun RoomDetailScreen(roomId: String?, navController: NavController, roomViewModel: RoomViewModel) {
     val room = roomViewModel.rooms.find { it.id == roomId }
 
+    // Đánh giá từ người dùng
+    var rating by remember { mutableStateOf(0f) }
+    var comment by remember { mutableStateOf("") }
+    val userId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
+    val context = LocalContext.current
+    val reviews = remember { mutableStateListOf<Review>() }
+
+    LaunchedEffect(roomId) {
+        roomViewModel.getReviewsByRoomId(roomId ?: "") {
+            reviews.clear()
+            reviews.addAll(it)
+        }
+    }
+
+    val canReview = remember { mutableStateOf(false) }
+
+    LaunchedEffect(roomId, userId) {
+        if (userId.isNotEmpty() && roomId != null) {
+            roomViewModel.hasUserBookedRoom(userId, roomId) {
+                canReview.value = it
+            }
+        }
+    }
+
+    val hasRequested = remember { mutableStateOf(false) }
+
+    LaunchedEffect(room?.id, userId) {
+        if (!userId.isNullOrBlank() && room != null) {
+            roomViewModel.hasPendingBookingRequest(userId, room.id) { alreadyRequested ->
+                hasRequested.value = alreadyRequested
+            }
+        }
+    }
+
+
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Chi tiết phòng", color = Color.White, fontWeight = FontWeight.Bold) },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primary
-                ),
+            CenterAlignedTopAppBar(
+                title = {
+                    Text("Chi tiết phòng", fontSize = 18.sp, fontWeight = FontWeight.Medium)
+                },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = Color.White)
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Quay lại"
+                        )
                     }
+                },
+                actions = {
+                    if (!hasRequested.value) {
+                        TextButton(
+                            onClick = {
+                                room?.let {
+                                    roomViewModel.sendBookingRequest(
+                                        roomId = it.id,
+                                        userId = userId,
+                                        landlordId = it.owner_id.toString()
+                                    ) { success ->
+                                        if (success) {
+                                            Toast.makeText(context, "Yêu cầu đặt phòng đã gửi!", Toast.LENGTH_SHORT).show()
+                                            hasRequested.value = true
+                                            navController.navigate(Routes.BOOKING_PENDING)
+                                        } else {
+                                            Toast.makeText(context, "Gửi yêu cầu thất bại!", Toast.LENGTH_SHORT).show()
+                                        }
+                                    }
+                                }
+                            }
+                        ) {
+                            Text(
+                                text = "Đặt phòng",
+                                color = MaterialTheme.colorScheme.primary,
+                                fontSize = 14.sp
+                            )
+                        }
+                    } else {
+                        TextButton(onClick = {
+                            Toast.makeText(context, "Bạn đã gửi yêu cầu đặt phòng cho phòng này rồi.", Toast.LENGTH_SHORT).show()
+                        }) {
+                            Text(
+                                text = "Đã yêu cầu",
+                                color = Color.Gray,
+                                fontSize = 14.sp
+                            )
+                        }
+                    }
+
+
                 }
             )
-        },
-        bottomBar = {
+        }
+,
+                bottomBar = {
             Button(
                 onClick = { /* Hành động đặt phòng hoặc liên hệ chủ phòng */ },
                 modifier = Modifier
@@ -210,6 +295,89 @@ fun RoomDetailScreen(roomId: String?, navController: NavController, roomViewMode
                 )
             }
         }
+
+
+        if (canReview.value) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text("Đánh giá phòng", fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Text("Số sao:")
+                Slider(
+                    value = rating,
+                    onValueChange = { rating = it },
+                    valueRange = 0f..5f,
+                    steps = 4,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Text("Đánh giá: ${rating.toInt()} sao")
+
+
+                OutlinedTextField(
+                    value = comment,
+                    onValueChange = { comment = it },
+                    label = { Text("Viết bình luận") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Button(
+                    onClick = {
+                        val review = Review(
+                            id = UUID.randomUUID().toString(),
+                            userId = userId,
+                            roomId = room?.id ?: "",
+                            rating = rating,
+                            comment = comment
+                        )
+                        roomViewModel.submitReview(review) { success ->
+                            if (success) {
+                                Toast.makeText(context, "Đã gửi đánh giá!", Toast.LENGTH_SHORT).show()
+                                rating = 0f
+                                comment = ""
+                            }
+                        }
+                    },
+                    enabled = userId.isNotEmpty() && rating > 0
+                ) {
+                    Text("Gửi đánh giá")
+                }
+            }
+        } else if (userId.isNotEmpty()) {
+            Text(
+                "Bạn cần đặt phòng trước khi có thể đánh giá.",
+                modifier = Modifier.padding(16.dp),
+                color = Color.Gray
+            )
+        }
+
+
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text("Đánh giá của người dùng", fontWeight = FontWeight.Bold, fontSize = 18.sp)
+            Spacer(modifier = Modifier.height(8.dp))
+            if (reviews.isEmpty()) {
+                Text("Chưa có đánh giá nào.")
+            } else {
+                reviews.forEach { review ->
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 4.dp),
+                        elevation = CardDefaults.cardElevation(4.dp)
+                    ) {
+                        Column(modifier = Modifier.padding(12.dp)) {
+                            Text("⭐ ${review.rating.toInt()} sao", fontWeight = FontWeight.SemiBold)
+                            Text(review.comment)
+                            Text("Ngày: ${SimpleDateFormat("dd/MM/yyyy").format(Date(review.submittedAt))}",
+                                fontSize = 12.sp, color = Color.Gray)
+                        }
+                    }
+                }
+            }
+        }
+
+
     }
 }
 

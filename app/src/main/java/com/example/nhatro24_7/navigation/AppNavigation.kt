@@ -8,8 +8,10 @@ import com.example.nhatro24_7.ui.screen.Admin.AdminScreen
 import com.example.nhatro24_7.ui.screen.Auth.LoginScreen
 import com.example.nhatro24_7.ui.screen.Auth.RegisterScreen
 import com.example.nhatro24_7.ui.screen.Auth.SplashScreen
+import com.example.nhatro24_7.ui.screen.customer.booking.BookingPendingScreen
 import com.example.nhatro24_7.ui.screen.customer.home.CustomerHomeScreen
 import com.example.nhatro24_7.ui.screen.customer.home.RoomDetailScreen
+import com.example.nhatro24_7.ui.screen.customer.payment.PaymentScreen
 import com.example.nhatro24_7.ui.screen.customer.profile.*
 import com.example.nhatro24_7.ui.screen.customer.profile.account.ChangePasswordScreen
 import com.example.nhatro24_7.ui.screen.customer.profile.account.DeleteAccountScreen
@@ -18,8 +20,12 @@ import com.example.nhatro24_7.ui.screen.customer.profile.account.VerifyAccountSc
 import com.example.nhatro24_7.ui.screen.customer.saveroom.SavedRoomScreen
 import com.example.nhatro24_7.ui.screen.landlord.home.LandlordScreen
 import com.example.nhatro24_7.ui.screen.landlord.room.AddRoomScreen
+import com.example.nhatro24_7.ui.screen.landlord.room.BookingRequestDetailScreen
+import com.example.nhatro24_7.ui.screen.landlord.room.BookingRequestsForLandlordScreen
+import com.example.nhatro24_7.ui.screen.notification.NotificationScreen
 import com.example.nhatro24_7.viewmodel.AuthViewModel
 import com.example.nhatro24_7.viewmodel.RoomViewModel
+import com.google.firebase.auth.FirebaseAuth
 
 @Composable
 fun AppNavigation(
@@ -97,6 +103,19 @@ fun AppNavigation(
         }
 
 
+        composable(Routes.BOOKING_PENDING) {
+            BookingPendingScreen(navController)
+        }
+
+        composable(Routes.PAYMENT_SCREEN) {
+            PaymentScreen(navController = navController)
+        }
+
+//        composable(Routes.CUSTOMER_NOTIFICATIONS) {
+//            NotificationScreen()
+//        }
+
+
         composable(Routes.CUSTOMER_PROFILE) {
             ProfileScreen(
                 navController = navController,
@@ -125,6 +144,24 @@ fun AppNavigation(
             AddRoomScreen(navController = navController, roomViewModel = RoomViewModel())
         }
 
+        composable(Routes.LANDLORD_BOOKING_REQUESTS) {
+            BookingRequestsForLandlordScreen(
+                navController = navController,
+                roomViewModel = RoomViewModel()
+            )
+
+        }
+
+        composable(Routes.LANDLORD_NOTIFY) {
+            val landlordId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
+            NotificationScreen(userId = landlordId)
+        }
+
+        composable("booking_detail/{roomId}/{userId}") { backStackEntry ->
+            val roomId = backStackEntry.arguments?.getString("roomId") ?: ""
+            val userId = backStackEntry.arguments?.getString("userId") ?: ""
+            BookingRequestDetailScreen(roomId, userId, navController, RoomViewModel())
+        }
 
 
 

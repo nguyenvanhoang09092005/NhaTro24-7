@@ -38,6 +38,10 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.text.font.FontWeight
 import com.example.nhatro24_7.data.model.SavedRoom
 import kotlinx.coroutines.launch
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -46,15 +50,17 @@ fun CustomerHomeScreen(
     viewModel: AuthViewModel,
     roomViewModel: RoomViewModel = viewModel()
 ) {
-    val rooms by remember { mutableStateOf(roomViewModel.rooms) }
+    val rooms = roomViewModel.rooms
 
     var selectedRoomType by remember { mutableStateOf("Tất cả") }
     var selectedRoomCategory by remember { mutableStateOf("Tất cả") }
 
     val filteredRooms = rooms.filter {
-        (selectedRoomType == "Tất cả" || it.roomType == selectedRoomType) &&
+        it.isAvailable &&
+                (selectedRoomType == "Tất cả" || it.roomType == selectedRoomType) &&
                 (selectedRoomCategory == "Tất cả" || it.roomCategory == selectedRoomCategory)
     }
+
 
     val isFilterApplied = selectedRoomType != "Tất cả" || selectedRoomCategory != "Tất cả"
     val snackbarHostState = remember { SnackbarHostState() }
@@ -69,7 +75,20 @@ fun CustomerHomeScreen(
             }
         }
     }
+    val lifecycleOwner = LocalLifecycleOwner.current
 
+    DisposableEffect(navController) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                roomViewModel.fetchRooms()
+            }
+        }
+        val lifecycle = lifecycleOwner.lifecycle
+        lifecycle.addObserver(observer)
+        onDispose {
+            lifecycle.removeObserver(observer)
+        }
+    }
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -116,11 +135,19 @@ fun CustomerHomeScreen(
                     color = MaterialTheme.colorScheme.primary
                 )
                 LazyRow(modifier = Modifier.padding(start = 5.dp)) {
-                    items(rooms.sortedByDescending { it.created_at }.take(10)) { room ->
+                    items(rooms.filter { it.isAvailable }.sortedByDescending { it.created_at }.take(10)) { room ->
                         RoomItem(
                             room = room,
                             isSaved = savedRoomIds.contains(room.id),
-                            onClick = { navController.navigate("roomDetail/${room.id}") },
+                            onClick = {
+                                val userId = viewModel.getCurrentUserId()
+                                if (userId != null) {
+                                    roomViewModel.logViewRoom(userId, room.id)
+                                    roomViewModel.incrementRoomViewCount(room.id)
+                                }
+                                navController.navigate("roomDetail/${room.id}")
+                            }
+                            ,
                             onToggleSave = {
                                 val userId = viewModel.getCurrentUserId()
                                 if (userId == null) {
@@ -165,18 +192,25 @@ fun CustomerHomeScreen(
                 Spacer(modifier = Modifier.height(10.dp))
 
                 Text(
-                    "Phòng được yêu thích",
+                    "Phòng được xem nhiều nhất",
                     modifier = Modifier.padding(start = 10.dp, bottom = 5.dp),
                     style = MaterialTheme.typography.titleMedium,
                     fontSize = 18.sp,
                     color = MaterialTheme.colorScheme.primary
                 )
+
                 LazyRow(modifier = Modifier.padding(start = 5.dp)) {
-                    items(rooms.shuffled().take(10)) { room ->
+                    items(rooms.sortedByDescending { it.viewCount }.take(10)) { room ->
                         RoomItem(
                             room = room,
                             isSaved = savedRoomIds.contains(room.id),
-                            onClick = { navController.navigate("roomDetail/${room.id}") },
+                            onClick = {
+                                val userId = viewModel.getCurrentUserId()
+                                if (userId != null) {
+                                    roomViewModel.logAndIncrementView(userId, room.id)
+                                }
+                                navController.navigate("roomDetail/${room.id}")
+                            },
                             onToggleSave = {
                                 val userId = viewModel.getCurrentUserId()
                                 if (userId == null) {
@@ -189,7 +223,6 @@ fun CustomerHomeScreen(
                                 val savedRoom = SavedRoom(userId = userId, roomId = room.id)
 
                                 if (savedRoomIds.contains(room.id)) {
-                                    // Nếu đã lưu, thì sẽ gỡ lưu
                                     roomViewModel.unsaveRoom(savedRoom) { success ->
                                         if (success) {
                                             savedRoomIds.remove(room.id)
@@ -199,7 +232,6 @@ fun CustomerHomeScreen(
                                         }
                                     }
                                 } else {
-                                    // Nếu chưa lưu, thì sẽ lưu
                                     roomViewModel.saveRoom(savedRoom) { success ->
                                         if (success) {
                                             savedRoomIds.add(room.id)
@@ -209,14 +241,11 @@ fun CustomerHomeScreen(
                                         }
                                     }
                                 }
-
-
                             }
                         )
-
-
                     }
                 }
+
 
                 Spacer(modifier = Modifier.height(10.dp))
             }
@@ -241,7 +270,15 @@ fun CustomerHomeScreen(
                     RoomItem(
                         room = room,
                         isSaved = savedRoomIds.contains(room.id),
-                        onClick = { navController.navigate("roomDetail/${room.id}") },
+                        onClick = {
+                            val userId = viewModel.getCurrentUserId()
+                            if (userId != null) {
+                                roomViewModel.logViewRoom(userId, room.id)
+                                roomViewModel.incrementRoomViewCount(room.id)
+                            }
+                            navController.navigate("roomDetail/${room.id}")
+                        }
+                        ,
                         onToggleSave = {
                             val userId = viewModel.getCurrentUserId()
                             if (userId == null) {
@@ -285,7 +322,6 @@ fun CustomerHomeScreen(
 
     }
 }
-
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable

@@ -12,6 +12,9 @@ data class Room(
     val amenities: List<String> = emptyList(),
     val mainImage: String = "",
     val images: List<String> = emptyList(),
-    val owner_id: Int = 0,
+    val viewCount: Int = 0,
+    val isAvailable: Boolean = true,
+    val owner_id: String = "",
     val created_at: Long = 0L
+
 )

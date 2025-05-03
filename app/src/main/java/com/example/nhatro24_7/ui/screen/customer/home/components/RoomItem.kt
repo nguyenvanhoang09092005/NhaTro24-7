@@ -10,6 +10,7 @@ import androidx.compose.material.icons.filled.BookmarkBorder
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.SquareFoot
+import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateListOf
@@ -18,6 +19,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -57,7 +60,6 @@ fun RoomItem( room: Room,
                     contentDescription = "Room Image",
                     modifier = Modifier
                         .fillMaxWidth()
-                        .width(175.dp)
                         .height(160.dp)
                         .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)),
                     contentScale = ContentScale.Crop
@@ -79,23 +81,51 @@ fun RoomItem( room: Room,
 
                 Box(
                     modifier = Modifier
-                        .align(Alignment.BottomStart)
+                        .fillMaxWidth()
+                        .height(34.dp)
+                        .align(Alignment.BottomCenter)
                         .background(
-                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.85f),
-                            shape = RoundedCornerShape(topEnd = 12.dp)
+                            brush = Brush.verticalGradient(
+                                colors = listOf(
+                                    Color.Black.copy(alpha = 0.25f),
+                                    Color.Black.copy(alpha = 0.6f)
+                                )
+                            ),
+                            shape = RoundedCornerShape(topStart  = 16.dp, topEnd  = 16.dp)
                         )
-                        .padding(horizontal = 10.dp, vertical = 4.dp)
+                        .padding(horizontal = 12.dp),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        text = "${room.price.toInt()} VNĐ",
-                        color = MaterialTheme.colorScheme.onPrimary,
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Bold,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "${room.price.toInt()} VNĐ",
+                            color = Color.White,
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
+
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Default.Visibility,
+                                contentDescription = "Lượt xem",
+                                tint = Color.White,
+                                modifier = Modifier.size(15.dp)
+                            )
+                            Spacer(modifier = Modifier.width(3.dp))
+                            Text(
+                                text = "${room.viewCount}",
+                                color = Color.White,
+                                fontSize = 12.sp
+                            )
+                        }
+                    }
                 }
             }
+
 
             Column(
                 modifier = Modifier
@@ -104,6 +134,9 @@ fun RoomItem( room: Room,
                 verticalArrangement = Arrangement.SpaceBetween
             ) {
                 Column {
+
+
+
                     Text(
                         text = room.title,
                         fontSize = 16.sp,
