@@ -12,15 +12,17 @@ import androidx.compose.ui.unit.sp
 import com.example.nhatro24_7.data.model.Review
 import com.example.nhatro24_7.data.model.Room
 import com.example.nhatro24_7.data.model.User
+import com.example.nhatro24_7.viewmodel.AuthViewModel
 import com.example.nhatro24_7.viewmodel.RoomViewModel
 import com.google.firebase.firestore.FirebaseFirestore
 import java.text.SimpleDateFormat
 import java.util.*
 
 @Composable
-fun LandlordProfileScreen(
+fun LandlordDetailScreen(
     landlordId: String,
-    roomViewModel: RoomViewModel
+    roomViewModel: RoomViewModel,
+    viewModel: AuthViewModel
 ) {
     val roomsByLandlord = remember { mutableStateListOf<Room>() }
     val allReviews = remember { mutableStateListOf<Review>() }
