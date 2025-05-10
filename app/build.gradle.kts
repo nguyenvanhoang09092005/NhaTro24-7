@@ -95,6 +95,10 @@ dependencies {
 
     implementation("androidx.datastore:datastore-preferences:1.0.0")
 
+    implementation ("androidx.compose.ui:ui:1.5.4")
+    implementation ("androidx.compose.material:material:1.5.4")
+    implementation ("androidx.navigation:navigation-compose:2.7.5")
+    implementation ("com.google.firebase:firebase-messaging-ktx:23.4.0")
     // Compose
     implementation("androidx.compose.runtime:runtime-livedata:1.6.4")
     implementation("androidx.navigation:navigation-compose:2.7.7")

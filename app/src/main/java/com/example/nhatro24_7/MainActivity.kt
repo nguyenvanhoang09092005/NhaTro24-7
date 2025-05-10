@@ -20,6 +20,11 @@ import com.example.nhatro24_7.viewmodel.AuthViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import androidx.hilt.navigation.compose.hiltViewModel
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
+import com.example.nhatro24_7.viewmodel.ChatViewModel
 
 
 @AndroidEntryPoint
@@ -37,7 +42,8 @@ class MainActivity : ComponentActivity() {
 
             val navController = rememberNavController()
             val authViewModel: AuthViewModel = hiltViewModel()
-
+            val chatViewModel: ChatViewModel = hiltViewModel()
+//            val notificationViewModel: NotificationViewModel = hiltViewModel()
 
             // Áp dụng theme
             NhaTro24_7Theme(darkTheme = isDarkMode) {
@@ -47,6 +53,7 @@ class MainActivity : ComponentActivity() {
                 ) {
                     AppNavigation(
                         navController = navController,
+                        chatViewModel = chatViewModel,
                         authViewModel = authViewModel,
                         isDarkTheme = isDarkMode,
                         selectedLanguage = selectedLanguage,

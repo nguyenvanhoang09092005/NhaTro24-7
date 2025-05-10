@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
+import com.example.nhatro24_7.navigation.Routes
 import com.example.nhatro24_7.ui.screen.customer.component.BottomNavBar
 import com.example.nhatro24_7.viewmodel.AuthViewModel
 import com.google.firebase.firestore.FirebaseFirestore
@@ -149,9 +150,9 @@ fun ProfileScreen(
                     expanded = isActivityExpanded,
                     onToggle = { isActivityExpanded = !isActivityExpanded },
                     items = listOf(
-                        Triple("Lịch sử hoạt động", Icons.Default.History, "activity_history"),
+                        Triple("Lịch sử đã xem", Icons.Default.History,Routes.CUSTOMER_HISTORY),
                         Triple("Lịch sử yêu thích", Icons.Default.Favorite, "liked_history"),
-                        Triple("Lịch sử đặt phòng", Icons.Default.Hotel, "booking_history"),
+                        Triple("Lịch sử đặt phòng", Icons.Default.Hotel, "customer_booking_history"),
                         Triple("Lịch sử hủy phòng", Icons.Default.Cancel, "cancel_history"),
                         Triple("Đánh giá đã gửi", Icons.Default.RateReview, "review_history")
                     ),

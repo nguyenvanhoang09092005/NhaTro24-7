@@ -39,6 +39,7 @@ fun BookingRequestsForLandlordScreen(
 ) {
     val context = LocalContext.current
     val landlordId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
+
     val bookingRequests = remember { mutableStateListOf<BookingRequest>() }
     val userNames = remember { mutableStateMapOf<String, String>() }
     val roomTitles = remember { mutableStateMapOf<String, String>() }
@@ -124,60 +125,104 @@ fun BookingRequestsForLandlordScreen(
                         Card(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(vertical = 8.dp)
-                                .clickable {
-                                    navController.navigate("booking_detail/${request.roomId}/${request.userId}")
-                                }
+                                .padding(vertical = 8.dp),
+                            shape = RoundedCornerShape(16.dp),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                            elevation = CardDefaults.cardElevation(6.dp)
                         ) {
-                            Column(modifier = Modifier.padding(16.dp)) {
-                                Text("Phòng: $roomTitle", fontWeight = FontWeight.Bold)
-                                Text("Người đặt: $userName")
-                                Text("Trạng thái: ${request.status}")
-                                Text("Thời gian: ${SimpleDateFormat("dd/MM/yyyy HH:mm").format(Date(request.timestamp))}")
+                            Column(modifier = Modifier
+                                .padding(16.dp)
+                                .clickable {
+                                    navController.navigate("booking_detail/${request.id}")
+                                }) {
 
-                                Spacer(Modifier.height(8.dp))
-
-                                if (request.status == "pending") {
-                                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                                        Button(onClick = {
-                                            roomViewModel.updateBookingStatus(request.id, "accepted") { success ->
-                                                if (success) {
-                                                    roomViewModel.markRoomAsUnavailable(request.roomId)
-                                                    Toast.makeText(context, "Đã chấp nhận", Toast.LENGTH_SHORT).show()
-                                                    refreshRequests()
-                                                } else {
-                                                    Toast.makeText(context, "Lỗi khi cập nhật!", Toast.LENGTH_SHORT).show()
-                                                }
-                                            }
-                                        }) {
-                                            Text("Chấp nhận")
-                                        }
-
-                                        OutlinedButton(onClick = {
-                                            roomViewModel.updateBookingStatus(request.id, "rejected") { success ->
-                                                if (success) {
-                                                    Toast.makeText(context, "Đã từ chối", Toast.LENGTH_SHORT).show()
-                                                    refreshRequests()
-                                                } else {
-                                                    Toast.makeText(context, "Lỗi khi cập nhật!", Toast.LENGTH_SHORT).show()
-                                                }
-                                            }
-                                        }) {
-                                            Text("Từ chối")
-                                        }
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Column {
+                                        Text("Phòng: $roomTitle", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                                        Text("Người đặt: $userName", fontSize = 14.sp)
                                     }
-                                } else {
-                                    // Đã xử lý: chỉ hiển thị trạng thái
+
+                                    val statusColor = when (request.status) {
+                                        "accepted" -> Color(0xFF4CAF50)
+                                        "rejected" -> Color.Red
+                                        else -> MaterialTheme.colorScheme.primary
+                                    }
+
+                                    Surface(
+                                        color = statusColor.copy(alpha = 0.1f),
+                                        shape = RoundedCornerShape(50),
+                                        modifier = Modifier.padding(start = 8.dp)
+                                    ) {
+                                        Text(
+                                            text = request.status.replaceFirstChar { it.uppercaseChar() },
+                                            color = statusColor,
+                                            fontSize = 12.sp,
+                                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                                        )
+                                    }
+                                }
+
+                                Spacer(modifier = Modifier.height(8.dp))
+
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(
+                                        imageVector = Icons.Default.Schedule,
+                                        contentDescription = "Thời gian",
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(6.dp))
                                     Text(
-                                        text = if (request.status == "accepted") "Đã chấp nhận" else "Đã từ chối",
-                                        color = if (request.status == "accepted") Color(0xFF4CAF50) else Color.Red,
-                                        fontWeight = FontWeight.Bold,
-                                        modifier = Modifier.padding(top = 4.dp)
+                                        text = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).format(Date(request.timestamp)),
+                                        fontSize = 13.sp,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
 
+                                if (request.status == "pending") {
+                                    Spacer(modifier = Modifier.height(12.dp))
+                                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                        Button(
+                                            onClick = {
+                                                roomViewModel.updateBookingStatus(request.id, "accepted") { success ->
+                                                    if (success) {
+                                                        roomViewModel.markRoomAsUnavailable(request.roomId)
+                                                        Toast.makeText(context, "Đã chấp nhận", Toast.LENGTH_SHORT).show()
+                                                        refreshRequests()
+                                                    } else {
+                                                        Toast.makeText(context, "Lỗi khi cập nhật!", Toast.LENGTH_SHORT).show()
+                                                    }
+                                                }
+                                            },
+                                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50))
+                                        ) {
+                                            Text("Chấp nhận", color = Color.White)
+                                        }
+
+                                        OutlinedButton(
+                                            onClick = {
+                                                roomViewModel.updateBookingStatus(request.id, "rejected") { success ->
+                                                    if (success) {
+                                                        Toast.makeText(context, "Đã từ chối", Toast.LENGTH_SHORT).show()
+                                                        refreshRequests()
+                                                    } else {
+                                                        Toast.makeText(context, "Lỗi khi cập nhật!", Toast.LENGTH_SHORT).show()
+                                                    }
+                                                }
+                                            },
+                                            colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.Red)
+                                        ) {
+                                            Text("Từ chối")
+                                        }
+                                    }
+                                }
                             }
                         }
+
                     }
                 }
             }

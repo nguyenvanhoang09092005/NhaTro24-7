@@ -1,9 +1,11 @@
 package com.example.nhatro24_7.ui.screen.customer.home
 
+import android.net.Uri
 import android.widget.Toast
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -13,6 +15,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
@@ -29,6 +32,9 @@ import com.example.nhatro24_7.viewmodel.RoomViewModel
 import com.google.firebase.auth.FirebaseAuth
 import java.text.SimpleDateFormat
 import java.util.*
+import com.example.nhatro24_7.util.generateChatId
+import com.google.firebase.firestore.FirebaseFirestore
+
 
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -47,6 +53,11 @@ fun RoomDetailScreen(roomId: String?, navController: NavController, roomViewMode
             reviews.clear()
             reviews.addAll(it)
         }
+    }
+
+
+    LaunchedEffect(Unit) {
+        roomViewModel.fetchUsers()
     }
 
     val canReview = remember { mutableStateOf(false) }
@@ -69,6 +80,17 @@ fun RoomDetailScreen(roomId: String?, navController: NavController, roomViewMode
         }
     }
 
+//    LaunchedEffect(roomId) {
+//        roomViewModel.getReviewsByRoomId(roomId ?: "") {
+//            reviews.clear()
+//            reviews.addAll(it)
+//        }
+//
+//        if (userId.isNotEmpty() && roomId != null) {
+//            roomViewModel.logRoomViewActivity(userId, roomId)  // <-- log lịch sử xem phòng
+//        }
+//    }
+
 
     Scaffold(
         topBar = {
@@ -80,7 +102,7 @@ fun RoomDetailScreen(roomId: String?, navController: NavController, roomViewMode
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(
                             Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Quay lại"
+                            contentDescription = ""
                         )
                     }
                 },
@@ -128,17 +150,7 @@ fun RoomDetailScreen(roomId: String?, navController: NavController, roomViewMode
             )
         }
 ,
-                bottomBar = {
-            Button(
-                onClick = { /* Hành động đặt phòng hoặc liên hệ chủ phòng */ },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Text("Liên hệ đặt phòng", fontSize = 16.sp, fontWeight = FontWeight.Bold)
-            }
-        }
+
     ) { padding ->
         room?.let {
             Column(
@@ -151,49 +163,45 @@ fun RoomDetailScreen(roomId: String?, navController: NavController, roomViewMode
                 // Hình ảnh chính
                 AsyncImage(
                     model = room.mainImage,
-                    contentDescription = "Room Main Image",
+                    contentDescription = "",
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(250.dp)
                         .clip(RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp)),
                     contentScale = ContentScale.Crop
                 )
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Thư viện ảnh phòng
-                Text(
-                    "Hình ảnh khác",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(horizontal = 16.dp)
-                )
-
-                LazyRow(
+                Spacer(modifier = Modifier.height(10.dp))
+                // Địa chỉ
+                Row(
                     modifier = Modifier.padding(horizontal = 16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    items(room.images.size) { index ->
-                        AsyncImage(
-                            model = room.images[index],
-                            contentDescription = "Room Image $index",
-                            modifier = Modifier
-                                .size(120.dp)
-                                .clip(RoundedCornerShape(12.dp)),
-                            contentScale = ContentScale.Crop
-                        )
-                    }
+                    Icon(
+                        imageVector = Icons.Default.LocationOn,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(28.dp)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = room.location,
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
                 }
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Tiêu đề phòng
-                Text(
-                    text = room.title,
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(horizontal = 16.dp)
-                )
 
-                Spacer(modifier = Modifier.height(8.dp))
+
+                // Tiêu đề phòng
+//                Text(
+//                    text = room.title,
+//                    style = MaterialTheme.typography.headlineSmall,
+//                    fontWeight = FontWeight.Bold,
+//                    modifier = Modifier.padding(horizontal = 16.dp)
+//                )
+//
+//                Spacer(modifier = Modifier.height(8.dp))
 
                 // Giá và diện tích
                 Row(
@@ -216,21 +224,7 @@ fun RoomDetailScreen(roomId: String?, navController: NavController, roomViewMode
                     InfoChip(Icons.Default.Category, room.roomType)
                     InfoChip(Icons.Default.Home, room.roomCategory)
                 }
-                Spacer(modifier = Modifier.height(8.dp))
 
-                // Địa chỉ
-                Row(
-                    modifier = Modifier.padding(horizontal = 16.dp,),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(Icons.Default.LocationOn, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(
-                        text = room.location,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                }
 
                 Spacer(modifier = Modifier.height(16.dp))
 
@@ -251,9 +245,142 @@ fun RoomDetailScreen(roomId: String?, navController: NavController, roomViewMode
                         AmenityChip(amenity = amenity)
                     }
                 }
+                // Thư viện ảnh phòng
+                Text(
+                    "Thư viện",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(horizontal = 16.dp)
+                )
 
-
+                LazyRow(
+                    modifier = Modifier.padding(horizontal = 18.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    items(room.images.size) { index ->
+                        AsyncImage(
+                            model = room.images[index],
+                            contentDescription = "Room Image $index",
+                            modifier = Modifier
+                                .size(169.dp)
+                                .clip(RoundedCornerShape(18.dp)),
+                            contentScale = ContentScale.Crop
+                        )
+                    }
+                }
                 Spacer(modifier = Modifier.height(16.dp))
+
+                val landlord = roomViewModel.users.find {it.id == room.owner_id}
+
+
+                landlord?.let {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 12.dp)
+                            .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(12.dp))
+                            .padding(16.dp)
+                    ) {
+                        Text("CHỦ TRỌ", fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            AsyncImage(
+                                model = it.avatarUrl,
+                                contentDescription = "Avatar",
+                                modifier = Modifier
+                                    .size(56.dp)
+                                    .clip(CircleShape)
+                                    .border(2.dp, MaterialTheme.colorScheme.primary, CircleShape),
+                                contentScale = ContentScale.Crop
+                            )
+
+                            Spacer(modifier = Modifier.width(12.dp))
+
+                            Column {
+                                Text(text = it.fullName, fontWeight = FontWeight.Medium, fontSize = 16.sp)
+                                Text(
+                                    text = "${it.birthDate}",
+                                    fontSize = 13.sp,
+                                    color = Color.Gray
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(24.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            OutlinedButton(
+                                onClick = {
+                                    val currentUserId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
+                                    val landlordId = room.owner_id
+                                    val chatId = generateChatId(currentUserId, landlordId)
+
+                                    val encodedName = Uri.encode(landlord.fullName)
+                                    val encodedAvatar = Uri.encode(landlord.avatarUrl)
+
+                                    val db = FirebaseFirestore.getInstance()
+                                    val chatRef = db.collection("chats").document(chatId)
+
+                                    chatRef.get().addOnSuccessListener { document ->
+                                        if (!document.exists()) {
+                                            val participants = listOf(currentUserId, landlordId)
+                                            chatRef.set(mapOf("participants" to participants))
+                                        }
+
+                                        // Kiểm tra điều kiện ở đây, sau khi Firestore đã xử lý xong
+                                        if (
+                                            chatId.isNotEmpty() &&
+                                            landlordId.isNotEmpty() &&
+                                            landlord.fullName.isNotEmpty() &&
+                                            landlord.avatarUrl.isNotEmpty()
+                                        ) {
+                                            navController.navigate(
+                                                Routes.customerChatRoute(
+                                                    chatId = chatId,
+                                                    receiverId = landlordId,
+                                                    receiverName = encodedName,
+                                                    receiverAvatarUrl = encodedAvatar
+                                                )
+                                            )
+                                        }
+                                    }
+                                },
+                                modifier = Modifier.weight(1f),
+                                shape = RoundedCornerShape(50),
+                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
+                                colors = ButtonDefaults.outlinedButtonColors(
+                                    contentColor = MaterialTheme.colorScheme.primary
+                                )
+                            ) {
+                                Icon(Icons.Default.Chat, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text("Liên hệ")
+                            }
+
+
+                            OutlinedButton(
+                                onClick = {
+                                    navController.navigate("landlord_profile/${room.owner_id}")
+                                },
+                                modifier = Modifier.weight(1f),
+                                shape = RoundedCornerShape(50),
+                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
+                                colors = ButtonDefaults.outlinedButtonColors(
+                                    contentColor = MaterialTheme.colorScheme.primary
+                                )
+                            ) {
+                                Icon(Icons.Default.Person, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text("Thông tin")
+                            }
+                        }
+                    }
+                }
 
                 // Mô tả chi tiết
                 Column(
@@ -386,14 +513,25 @@ fun InfoChip(icon: ImageVector, info: String) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
-            .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(12.dp))
-            .padding(horizontal = 12.dp, vertical = 6.dp)
+            .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(16.dp))
+            .shadow(2.dp, RoundedCornerShape(16.dp))
+            .padding(horizontal = 16.dp, vertical = 8.dp)
     ) {
-        Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
-        Spacer(modifier = Modifier.width(4.dp))
-        Text(info, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Icon(
+            icon,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(24.dp)
+        )
+        Spacer(modifier = Modifier.width(6.dp))
+        Text(
+            info,
+            fontSize = 16.sp,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
     }
 }
+
 
 @Composable
 fun Chip(text: String) {
@@ -424,24 +562,25 @@ fun AmenityChip(amenity: String) {
         else -> Icons.Default.CheckCircle
     }
 
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
+    Column(
         modifier = Modifier
-            .background(MaterialTheme.colorScheme.secondaryContainer, RoundedCornerShape(16.dp))
-            .padding(horizontal = 12.dp, vertical = 6.dp)
+            .width(80.dp) // hoặc điều chỉnh tuỳ thích
+            .padding(8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Icon(
             imageVector = icon,
             contentDescription = amenity,
             tint = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.size(18.dp)
+            modifier = Modifier.size(30.dp)
         )
-        Spacer(modifier = Modifier.width(6.dp))
+        Spacer(modifier = Modifier.height(4.dp))
         Text(
             text = amenity,
-            color = MaterialTheme.colorScheme.onSecondaryContainer,
-            fontSize = 13.sp,
-            fontWeight = FontWeight.Medium
+            style = MaterialTheme.typography.bodySmall,
+            textAlign = TextAlign.Center,
+            fontWeight = FontWeight.Medium,
+            maxLines = 2
         )
     }
 }

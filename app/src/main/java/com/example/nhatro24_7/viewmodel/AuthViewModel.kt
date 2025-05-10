@@ -1,13 +1,18 @@
 package com.example.nhatro24_7.viewmodel
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.nhatro24_7.data.model.User
 import com.example.nhatro24_7.data.repository.AuthRepository
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 import com.google.firebase.auth.AuthCredential
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.GoogleAuthProvider
+import com.google.firebase.firestore.FirebaseFirestore
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -18,6 +23,8 @@ class AuthViewModel @Inject constructor(
 
     var authState: AuthState = AuthState.Idle
         private set
+    private val _currentUser = MutableStateFlow<User?>(null)
+    val currentUser: StateFlow<User?> = _currentUser
 
     fun signUp(email: String, password: String, username: String, onResult: (Boolean, String) -> Unit) {
         viewModelScope.launch {
@@ -92,8 +99,83 @@ class AuthViewModel @Inject constructor(
         }
     }
 
+    fun updateLandlordInfo(user: User, onResult: (Boolean) -> Unit) {
+        val userId = FirebaseAuth.getInstance().currentUser?.uid
+        if (userId == null) {
+            onResult(false)
+            return
+        }
+
+        viewModelScope.launch {
+            try {
+                val db = com.google.firebase.firestore.FirebaseFirestore.getInstance()
+                db.collection("users")
+                    .document(userId)
+                    .set(user.copy(id = userId))
+                    .addOnSuccessListener {
+                        onResult(true)
+                    }
+                    .addOnFailureListener {
+                        onResult(false)
+                    }
+            } catch (e: Exception) {
+                onResult(false)
+            }
+        }
+    }
+
+
     fun getCurrentUserId(): String? {
         return FirebaseAuth.getInstance().currentUser?.uid
+    }
+
+    fun addBankAccount(accountNumber: String, bankName: String, accountHolder: String, onResult: (Boolean) -> Unit) {
+        val userId = FirebaseAuth.getInstance().currentUser?.uid
+        if (userId == null) {
+            onResult(false)
+            return
+        }
+
+        val userRef = FirebaseFirestore.getInstance().collection("users").document(userId)
+
+        // Cập nhật thông tin tài khoản ngân hàng vào document người dùng
+        userRef.update(
+            "landlordBankAccount", accountNumber,
+            "landlordBankName", bankName,
+            "landlordName", accountHolder
+        )
+            .addOnSuccessListener {
+                onResult(true)
+            }
+            .addOnFailureListener { exception ->
+                Log.e("AddBankAccount", "Lỗi khi cập nhật tài khoản ngân hàng: ", exception)
+                onResult(false)
+            }
+    }
+
+    fun getBankAccounts(onResult: (List<User>) -> Unit) {
+        val userId = FirebaseAuth.getInstance().currentUser?.uid
+        if (userId == null) {
+            onResult(emptyList())
+            return
+        }
+
+        val userRef = FirebaseFirestore.getInstance().collection("users").document(userId)
+
+        // Nếu tài khoản ngân hàng được lưu trong document người dùng
+        userRef.get()
+            .addOnSuccessListener { document ->
+                val user = document.toObject(User::class.java)
+                if (user != null && user.landlordBankAccount.isNotEmpty()) {
+                    onResult(listOf(user)) // Trả về danh sách chứa thông tin của tài khoản ngân hàng
+                } else {
+                    onResult(emptyList()) // Nếu không có tài khoản ngân hàng
+                }
+            }
+            .addOnFailureListener { exception ->
+                Log.e("BankAccountList", "Lỗi khi lấy tài khoản ngân hàng: ", exception)
+                onResult(emptyList())
+            }
     }
 
 

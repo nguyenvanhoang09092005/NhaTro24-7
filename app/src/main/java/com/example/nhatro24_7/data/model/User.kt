@@ -10,8 +10,11 @@ data class User(
     val hometown: String = "",
     val currentAddress: String = "",
     val phone: String = "",
-    val avatarUrl: String = ""
-) {
-    fun isAdmin() = role == "admin"
-    fun isLandlord() = role == "landlord"
-}
+    val avatarUrl: String = "",
+    val landlordName: String = "",
+    val landlordIdNumber: String = "",  // CMND/CCCD
+    val landlordBankAccount: String = "",
+    val landlordBankName: String = "",
+    val landlordZalo: String = "",
+    val chatIds: List<String> = emptyList()
+)

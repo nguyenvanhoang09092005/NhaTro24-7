@@ -23,14 +23,18 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
-import com.example.nhatro24_7.ui.screen.customer.component.BottomNavBar
+import com.example.nhatro24_7.ui.screen.customer.profile.SettingDropdownItem
+import com.example.nhatro24_7.ui.screen.customer.profile.SettingToggleItem
+import com.example.nhatro24_7.ui.screen.landlord.component.BottomNavBar
+import com.example.nhatro24_7.ui.screen.landlord.profile.ExpandableSection
+import com.example.nhatro24_7.ui.screen.landlord.profile.ProfileOption
 import com.example.nhatro24_7.viewmodel.AuthViewModel
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ProfileScreen(
+fun ProfileLandlordScreen(
     navController: NavController,
     viewModel: AuthViewModel,
     isDarkMode: Boolean,
@@ -41,13 +45,13 @@ fun ProfileScreen(
     val context = LocalContext.current
     var avatarUri by remember { mutableStateOf<Uri?>(null) }
 
-    var isActivityExpanded by remember { mutableStateOf(false) }
+    var isRoomExpanded by remember { mutableStateOf(false) }
     var isAccountExpanded by remember { mutableStateOf(false) }
-    var isLanguageDropdownExpanded by remember { mutableStateOf(false) }
-    var isNotificationEnabled by remember { mutableStateOf(true) }
+    var isPaymentExpanded by remember { mutableStateOf(false) }
     var username by remember { mutableStateOf("Người dùng") }
     var avatarUrl by remember { mutableStateOf("") }
-
+    var isLanguageDropdownExpanded by remember { mutableStateOf(false) }
+    var isNotificationEnabled by remember { mutableStateOf(true) }
 
     LaunchedEffect(Unit) {
         val userId = viewModel.getCurrentUserId()
@@ -57,7 +61,6 @@ fun ProfileScreen(
             avatarUrl = doc.getString("avatarUrl") ?: ""
         }
     }
-
 
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         avatarUri = uri
@@ -73,7 +76,6 @@ fun ProfileScreen(
                 .background(MaterialTheme.colorScheme.background)
                 .verticalScroll(rememberScrollState())
         ) {
-            // Header avatar
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -82,99 +84,73 @@ fun ProfileScreen(
                 contentAlignment = Alignment.Center
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Box {
+                    val imageToDisplay = avatarUri?.toString() ?: if (avatarUrl.isNotBlank()) avatarUrl else null
 
-                        val imageToDisplay = avatarUri?.toString() ?: if (avatarUrl.isNotBlank()) avatarUrl else null
-
-                        if (imageToDisplay != null) {
-                            Image(
-                                painter = rememberAsyncImagePainter(imageToDisplay),
-                                contentDescription = "Avatar",
-                                contentScale = ContentScale.Crop,
-                                modifier = Modifier
-                                    .size(110.dp)
-                                    .clip(CircleShape)
-                                    .background(Color.White)
-                            )
-                        } else {
-                            Icon(
-                                imageVector = Icons.Default.AccountCircle,
-                                contentDescription = "Avatar",
-                                modifier = Modifier
-                                    .size(110.dp)
-                                    .background(Color.White, CircleShape),
-                                tint = Color.Gray
-                            )
-                        }
-
-
-//                        IconButton(
-//                            onClick = { launcher.launch("image/*") },
-//                            modifier = Modifier
-//                                .align(Alignment.BottomEnd)
-//                                .offset(6.dp, 6.dp)
-//                                .size(28.dp)
-//                                .background(MaterialTheme.colorScheme.primary, CircleShape)
-//                        ) {
-//                            Icon(
-//                                imageVector = Icons.Default.CameraAlt,
-//                                contentDescription = "Change Avatar",
-//                                tint = Color.White,
-//                                modifier = Modifier.size(16.dp)
-//                            )
-//                        }
+                    if (imageToDisplay != null) {
+                        Image(
+                            painter = rememberAsyncImagePainter(imageToDisplay),
+                            contentDescription = "Avatar",
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier
+                                .size(110.dp)
+                                .clip(CircleShape)
+                                .background(Color.White)
+                        )
+                    } else {
+                        Icon(
+                            imageVector = Icons.Default.AccountCircle,
+                            contentDescription = "Avatar",
+                            modifier = Modifier
+                                .size(110.dp)
+                                .background(Color.White, CircleShape),
+                            tint = Color.Gray
+                        )
                     }
 
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(username, fontSize = 18.sp, color = Color.White)
-
                 }
             }
 
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
+            Column(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surface)) {
+                Spacer(modifier = Modifier.height(22.dp))
 
-                        .background(MaterialTheme.colorScheme.surface)
-                ) {
-
-                    Spacer(modifier = Modifier.height(22.dp))
                 ProfileOption(Icons.Default.Person, "Trang cá nhân") {
-                    navController.navigate("customer_profile_detail")
+                    navController.navigate("landlord_profile_detail")
                 }
 
-                ExpandableSection(
-                    title = "Quản lý hoạt động",
-                    icon = Icons.Default.List,
-                    expanded = isActivityExpanded,
-                    onToggle = { isActivityExpanded = !isActivityExpanded },
-                    items = listOf(
-                        Triple("Lịch sử hoạt động", Icons.Default.History, "activity_history"),
-                        Triple("Lịch sử yêu thích", Icons.Default.Favorite, "liked_history"),
-                        Triple("Lịch sử đặt phòng", Icons.Default.Hotel, "booking_history"),
-                        Triple("Lịch sử hủy phòng", Icons.Default.Cancel, "cancel_history"),
-                        Triple("Đánh giá đã gửi", Icons.Default.RateReview, "review_history")
-                    ),
-                    navController = navController
-                )
+                ExpandableSection("Quản lý phòng trọ", Icons.Default.Home, isRoomExpanded, { isRoomExpanded = !isRoomExpanded },
+                    listOf(
+                        Triple("Danh sách phòng", Icons.Default.MeetingRoom, "room_list"),
+                        Triple("Thêm phòng mới", Icons.Default.AddBusiness, "add_room"),
+                        Triple("Lịch đặt phòng", Icons.Default.Event, "room_booking_schedule"),
+                        Triple("Yêu cầu thuê phòng", Icons.Default.Inbox, "landlord_booking_requests"),
+                        Triple("Đánh giá của khách", Icons.Default.ThumbUp, "guest_reviews")
+                    ), navController)
 
-                ExpandableSection(
-                    title = "Tài khoản",
-                    icon = Icons.Default.Settings,
-                    expanded = isAccountExpanded,
-                    onToggle = { isAccountExpanded = !isAccountExpanded },
-                    items = listOf(
+
+                ExpandableSection("Tài khoản", Icons.Default.Settings, isAccountExpanded, { isAccountExpanded = !isAccountExpanded },
+                    listOf(
                         Triple("Đổi mật khẩu", Icons.Default.Lock, "change_password"),
                         Triple("Xác minh Email/SĐT", Icons.Default.VerifiedUser, "verify_account"),
                         Triple("Liên kết tài khoản", Icons.Default.Link, "link_accounts"),
                         Triple("Xóa tài khoản", Icons.Default.Delete, "delete_account")
-                    ),
-                    navController = navController
-                )
+                    ), navController)
 
-
-                ProfileOption(Icons.Default.CardGiftcard, "Ưu đãi") { /* TODO */ }
-                ProfileOption(Icons.Default.Info, "Điều khoản và chính sách") { /* TODO */ }
+                ExpandableSection("Quản lý thanh toán", Icons.Default.AccountBalanceWallet, isPaymentExpanded, { isPaymentExpanded = !isPaymentExpanded },
+                    listOf(
+                        Triple("Thêm tài khoản ngân hàng", Icons.Default.AddCard, "add_bank_account"),
+                        Triple("Danh sách tài khoản ngân hàng", Icons.Default.AccountBalance, "list_bank_accounts"),
+                        Triple("Phương thức thanh toán", Icons.Default.Payment, "payment_methods")
+                    ), navController)
+                com.example.nhatro24_7.ui.screen.customer.profile.ProfileOption(
+                    Icons.Default.CardGiftcard,
+                    "Ưu đãi"
+                ) { /* TODO */ }
+                com.example.nhatro24_7.ui.screen.customer.profile.ProfileOption(
+                    Icons.Default.Info,
+                    "Điều khoản và chính sách"
+                ) { /* TODO */ }
 
                 Divider(modifier = Modifier.padding(vertical = 8.dp))
 
@@ -200,7 +176,10 @@ fun ProfileScreen(
                     // TODO: Save to DataStore if needed
                 }
 
-                ProfileOption(Icons.Default.Logout, "Đăng xuất") {
+                com.example.nhatro24_7.ui.screen.customer.profile.ProfileOption(
+                    Icons.Default.Logout,
+                    "Đăng xuất"
+                ) {
                     viewModel.signOut {
                         navController.navigate("splash") {
                             popUpTo(0) { inclusive = true }
@@ -209,16 +188,18 @@ fun ProfileScreen(
 
                 }
 
-                    Spacer(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(40.dp)
-                            .background(MaterialTheme.colorScheme.surface)
-                    )
+                Spacer(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(40.dp)
+                        .background(MaterialTheme.colorScheme.surface)
+                )
+            }
+                Spacer(modifier = Modifier.height(40.dp))
             }
         }
     }
-}
+
 
 @Composable
 fun ProfileOption(
@@ -345,4 +326,3 @@ fun ExpandableSection(
         }
     }
 }
-

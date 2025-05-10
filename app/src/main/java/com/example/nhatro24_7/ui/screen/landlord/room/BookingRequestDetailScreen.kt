@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import com.example.nhatro24_7.data.model.BookingRequest
 import com.example.nhatro24_7.data.model.Room
 import com.example.nhatro24_7.data.model.User
 import com.example.nhatro24_7.ui.screen.customer.home.AmenityChip
@@ -39,8 +40,7 @@ import java.util.Locale
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun BookingRequestDetailScreen(
-    roomId: String,
-    userId: String,
+    bookingRequestId: String,
     navController: NavController,
     roomViewModel: RoomViewModel
 ) {
@@ -49,13 +49,22 @@ fun BookingRequestDetailScreen(
 
     val context = LocalContext.current
 
-    // Fetch room and user data
-    LaunchedEffect(Unit) {
-        FirebaseFirestore.getInstance().collection("rooms").document(roomId).get()
-            .addOnSuccessListener { doc -> room = doc.toObject(Room::class.java)?.copy(id = doc.id) }
+    LaunchedEffect(bookingRequestId) {
+        FirebaseFirestore.getInstance().collection("booking_requests").document(bookingRequestId).get()
+            .addOnSuccessListener { bookingDoc ->
+                val booking = bookingDoc.toObject(BookingRequest::class.java)
+                if (booking != null) {
+                    FirebaseFirestore.getInstance().collection("rooms").document(booking.roomId).get()
+                        .addOnSuccessListener { doc ->
+                            room = doc.toObject(Room::class.java)?.copy(id = doc.id)
+                        }
 
-        FirebaseFirestore.getInstance().collection("users").document(userId).get()
-            .addOnSuccessListener { doc -> user = doc.toObject(User::class.java)?.copy(id = doc.id) }
+                    FirebaseFirestore.getInstance().collection("users").document(booking.userId).get()
+                        .addOnSuccessListener { doc ->
+                            user = doc.toObject(User::class.java)?.copy(id = doc.id)
+                        }
+                }
+            }
     }
 
     Scaffold(

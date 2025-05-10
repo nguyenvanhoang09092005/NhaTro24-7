@@ -15,6 +15,11 @@ data class Room(
     val viewCount: Int = 0,
     val isAvailable: Boolean = true,
     val owner_id: String = "",
+
+    // Thông tin chủ nhà (dùng cho thanh toán)
+    val landlordName: String = "",
+    val landlordBankAccount: String = "",
+    val landlordBankName: String = "",
     val created_at: Long = 0L
 
 )

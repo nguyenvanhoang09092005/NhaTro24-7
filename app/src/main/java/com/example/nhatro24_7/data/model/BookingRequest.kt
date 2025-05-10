@@ -5,6 +5,6 @@ data class BookingRequest(
     val roomId: String = "",
     val userId: String = "",
     val landlordId: String = "",
-    val status: String = "pending",  // accepted / rejected
+    val status: String = "pending",
     val timestamp: Long = 0L
 )

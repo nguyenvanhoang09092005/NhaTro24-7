@@ -1,35 +1,52 @@
-package com.example.nhatro24_7.ui.screen.customer.profile
+package com.example.nhatro24_7.ui.screen.customer.detail
 
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
+import coil.compose.AsyncImage
+import coil.compose.rememberAsyncImagePainter
 import com.example.nhatro24_7.data.model.Review
 import com.example.nhatro24_7.data.model.Room
 import com.example.nhatro24_7.data.model.User
-import com.example.nhatro24_7.viewmodel.AuthViewModel
 import com.example.nhatro24_7.viewmodel.RoomViewModel
 import com.google.firebase.firestore.FirebaseFirestore
 import java.text.SimpleDateFormat
 import java.util.*
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LandlordDetailScreen(
     landlordId: String,
-    roomViewModel: RoomViewModel,
-    viewModel: AuthViewModel
+    navController: NavController,
+    roomViewModel: RoomViewModel
 ) {
     val roomsByLandlord = remember { mutableStateListOf<Room>() }
-    val allReviews = remember { mutableStateListOf<Review>() }
+    val landlordReviews = remember { mutableStateListOf<Review>() }
     val landlordInfo = remember { mutableStateOf<User?>(null) }
+    var infoExpanded by remember { mutableStateOf(false) }
+    var selectedTab by remember { mutableStateOf(0) }
 
     LaunchedEffect(landlordId) {
-        // Fetch landlord info
         FirebaseFirestore.getInstance()
             .collection("users")
             .document(landlordId)
@@ -38,68 +55,297 @@ fun LandlordDetailScreen(
                 landlordInfo.value = doc.toObject(User::class.java)
             }
 
-        // Fetch rooms
         roomViewModel.fetchRoomsByOwner(landlordId) { rooms ->
             roomsByLandlord.clear()
             roomsByLandlord.addAll(rooms)
-
-            // Fetch reviews for all rooms
-            rooms.forEach { room ->
-                roomViewModel.getReviewsByRoomId(room.id) { reviews ->
-                    allReviews.addAll(reviews)
-                }
-            }
-        }
-    }
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(16.dp)
-    ) {
-        landlordInfo.value?.let { user ->
-            Text("Chủ trọ: ${user.fullName}", fontSize = 22.sp, fontWeight = FontWeight.Bold)
-            Spacer(modifier = Modifier.height(4.dp))
-            Text("Email: ${user.email}", fontSize = 16.sp)
-            Text("SĐT: ${user.phone}", fontSize = 16.sp)
-            Text("Địa chỉ: ${user.currentAddress}", fontSize = 16.sp)
-        } ?: Text("Đang tải thông tin chủ trọ...")
-
-        Spacer(modifier = Modifier.height(20.dp))
-
-        Text("Đánh giá từ người thuê", fontSize = 20.sp, fontWeight = FontWeight.Bold)
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        if (allReviews.isEmpty()) {
-            Text("Chưa có đánh giá nào.")
-        } else {
-            allReviews.forEach { review ->
-                ReviewCard(review)
-            }
         }
 
-        Spacer(modifier = Modifier.height(60.dp))
+        FirebaseFirestore.getInstance()
+            .collection("reviews")
+            .whereEqualTo("userId", landlordId)
+            .get()
+            .addOnSuccessListener { result ->
+                landlordReviews.clear()
+                landlordReviews.addAll(result.toObjects(Review::class.java))
+            }
     }
-}
 
-@Composable
-fun ReviewCard(review: Review) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 6.dp),
-        elevation = CardDefaults.cardElevation(4.dp)
-    ) {
-        Column(modifier = Modifier.padding(12.dp)) {
-            Text("⭐ ${review.rating.toInt()} sao", fontWeight = FontWeight.SemiBold)
-            Text(review.comment)
-            Text(
-                "Ngày: ${SimpleDateFormat("dd/MM/yyyy").format(Date(review.submittedAt))}",
-                fontSize = 12.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Trang cá nhân", color = MaterialTheme.colorScheme.onPrimary) },
+                navigationIcon = {
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.onPrimary)
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primary
+                )
             )
         }
+    ) { paddingValues ->
+        landlordInfo.value?.let { user ->
+            Column(
+                modifier = Modifier
+                    .padding(paddingValues)
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Image(
+                    painter = rememberAsyncImagePainter(user.avatarUrl),
+                    contentDescription = "Avatar",
+                    modifier = Modifier
+                        .size(100.dp)
+                        .clip(CircleShape)
+                        .border(2.dp, MaterialTheme.colorScheme.primary, CircleShape)
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Text(
+                    text = user.fullName ?: "Chưa có tên",
+                    fontSize = 20.sp,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontWeight = FontWeight.Bold
+                )
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(8.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                ) {
+                    Column {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { infoExpanded = !infoExpanded }
+                                .padding(horizontal = 16.dp, vertical = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(Icons.Default.Menu, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Text(
+                                text = "Thông tin cá nhân",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 16.sp,
+                                modifier = Modifier.weight(1f),
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Icon(
+                                imageVector = if (infoExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
+
+                        if (infoExpanded) {
+                            Column(modifier = Modifier.padding(start = 32.dp, end = 16.dp, bottom = 16.dp)) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(Icons.Default.Phone, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text("SĐT: ${user.phone.ifEmpty { "Chưa cung cấp" }}", fontSize = 14.sp)
+                                }
+
+                                Spacer(modifier = Modifier.height(8.dp))
+
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(Icons.Default.LocationOn, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text("Địa chỉ: ${user.currentAddress ?: "Chưa cung cấp"}", fontSize = 14.sp)
+                                }
+
+                                Spacer(modifier = Modifier.height(8.dp))
+
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(Icons.Default.Email, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text("Email: ${user.email.ifEmpty { "Chưa cung cấp" }}", fontSize = 14.sp)
+                                }
+                            }
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                TabRow(selectedTabIndex = selectedTab) {
+                    Tab(
+                        selected = selectedTab == 0,
+                        onClick = { selectedTab = 0 },
+                        text = { Text("Đánh giá") }
+                    )
+                    Tab(
+                        selected = selectedTab == 1,
+                        onClick = { selectedTab = 1 },
+                        text = { Text("Phòng đã đăng") }
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                if (selectedTab == 0) {
+                    if (landlordReviews.isEmpty()) {
+                        Text("Chủ trọ này chưa có đánh giá nào.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    } else {
+                        landlordReviews.forEach { review ->
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 4.dp),
+                                shape = RoundedCornerShape(8.dp),
+                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                            ) {
+                                Column(modifier = Modifier.padding(12.dp)) {
+                                    Text("Đánh giá: ${review.rating}/5", fontWeight = FontWeight.Bold)
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text(review.comment)
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text(
+                                        text = "Gửi lúc: ${
+                                            SimpleDateFormat("dd/MM/yyyy").format(Date(review.submittedAt))
+                                        }",
+                                        fontSize = 12.sp,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    if (roomsByLandlord.isEmpty()) {
+                        Text("Chủ trọ này chưa đăng phòng nào.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    } else {
+                        roomsByLandlord.forEach { room ->
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 12.dp, vertical = 8.dp)
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clip(RoundedCornerShape(12.dp))
+                                        .clickable {
+                                            navController.navigate("roomDetail/${room.id}")
+                                        }
+                                ) {
+                                    Box(modifier = Modifier.size(100.dp)) {
+                                        AsyncImage(
+                                            model = room.mainImage,
+                                            contentDescription = "Ảnh phòng",
+                                            contentScale = ContentScale.Crop,
+                                            modifier = Modifier
+                                                .matchParentSize()
+                                                .clip(RoundedCornerShape(8.dp))
+                                        )
+
+                                        Box(
+                                            modifier = Modifier
+                                                .align(Alignment.TopStart)
+                                                .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(bottomEnd = 8.dp))
+                                                .padding(horizontal = 6.dp, vertical = 2.dp)
+                                        ) {
+                                            Text(
+                                                text = "${"%.1f".format(room.price / 1_000_000)} triệu",
+                                                color = Color.White,
+                                                fontSize = 12.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis
+                                            )
+                                        }
+                                    }
+
+                                    Spacer(modifier = Modifier.width(12.dp))
+
+                                    Column(
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .align(Alignment.CenterVertically)
+                                    ) {
+                                        Text(
+                                            text = room.title ?: "Tin đăng mới",
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 16.sp,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
+                                        Spacer(modifier = Modifier.height(4.dp))
+
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Icon(
+                                                imageVector = Icons.Default.Place,
+                                                contentDescription = "Địa chỉ",
+                                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                modifier = Modifier.size(16.dp)
+                                            )
+                                            Spacer(modifier = Modifier.width(4.dp))
+                                            Text(
+                                                text = room.location ?: "Địa chỉ không rõ",
+                                                fontSize = 13.sp,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis
+                                            )
+                                        }
+
+                                        Spacer(modifier = Modifier.height(2.dp))
+
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Icon(
+                                                imageVector = Icons.Default.SquareFoot,
+                                                contentDescription = "Diện tích",
+                                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                modifier = Modifier.size(16.dp)
+                                            )
+                                            Spacer(modifier = Modifier.width(4.dp))
+                                            Text(
+                                                text = "${room.area} m²",
+                                                fontSize = 13.sp,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
+
+                                        Spacer(modifier = Modifier.height(2.dp))
+
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Icon(
+                                                imageVector = Icons.Default.Apartment,
+                                                contentDescription = "Loại phòng",
+                                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                modifier = Modifier.size(16.dp)
+                                            )
+                                            Spacer(modifier = Modifier.width(4.dp))
+                                            Text(
+                                                text = room.roomCategory ?: "Cho thuê",
+                                                fontSize = 13.sp,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
+                                    }
+                                }
+
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Divider(color = MaterialTheme.colorScheme.outlineVariant, thickness = 1.dp)
+                            }
+                        }
+
+                    }
+                }
+            }
+        } ?: Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues),
+            contentAlignment = Alignment.Center
+        ) {
+            CircularProgressIndicator()
+        }
     }
 }
+

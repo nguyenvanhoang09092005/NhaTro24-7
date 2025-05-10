@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "691844467671",
+    "project_id": "nhatro-acb02",
+    "storage_bucket": "nhatro-acb02.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:691844467671:android:44af9e028c7f16b7c21992",
+        "android_client_info": {
+          "package_name": "com.example.nhatro24_7"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "691844467671-ofosk42kfkg75al407olol0b3m6as09d.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.nhatro24_7",
+            "certificate_hash": "973ce889639a987077487c972a244793078cb0dc"
+          }
+        },
+        {
+          "client_id": "691844467671-9on86a7ohmlnl889o8u3t9theh0n7s9n.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAUzK3MhcMPgvaK3hqwcG5QA4Dca9uyUpI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "691844467671-9on86a7ohmlnl889o8u3t9theh0n7s9n.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

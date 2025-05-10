@@ -1,18 +1,31 @@
 package com.example.nhatro24_7.viewmodel
 
+import android.system.Os.close
 import android.util.Log
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.example.nhatro24_7.data.model.ActivityLog
 import com.example.nhatro24_7.data.model.BookingRequest
 import com.example.nhatro24_7.data.model.Review
 import com.example.nhatro24_7.data.model.Room
 import com.example.nhatro24_7.data.model.SavedRoom
+import com.example.nhatro24_7.data.model.User
+import com.google.firebase.Firebase
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
+import com.google.firebase.firestore.firestore
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.tasks.await
 import java.util.UUID
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.launch
+
 
 class RoomViewModel : ViewModel() {
 
@@ -21,26 +34,34 @@ class RoomViewModel : ViewModel() {
     private val db = FirebaseFirestore.getInstance()
     val rooms: List<Room> get() = _rooms
     private val viewedRoomIds = mutableSetOf<String>()
+//
+//    private val _bookingRequests = MutableStateFlow<List<BookingRequest>>(sampleRequests)
+//    val bookingRequests: StateFlow<List<BookingRequest>> = _bookingRequests
     init {
         fetchRooms()
+        fetchUsers()
     }
 
     fun fetchRooms() {
         firestore.collection("rooms")
             .whereEqualTo("isAvailable", true)
             .orderBy("created_at", Query.Direction.DESCENDING)
-            .get()
-            .addOnSuccessListener { result ->
-                _rooms.clear()
-                for (document in result) {
-                    val room = document.toObject(Room::class.java).copy(id = document.id)
-                    _rooms.add(room)
+            .addSnapshotListener { snapshot, exception ->
+                if (exception != null) {
+                    Log.e("RoomViewModel", "Lỗi khi lấy dữ liệu phòng", exception)
+                    return@addSnapshotListener
+                }
+
+                if (snapshot != null) {
+                    _rooms.clear()
+                    for (document in snapshot.documents) {
+                        val room = document.toObject(Room::class.java)?.copy(id = document.id)
+                        room?.let { _rooms.add(it) }
+                    }
                 }
             }
-            .addOnFailureListener {
-                Log.e("RoomViewModel", "Lỗi khi lấy dữ liệu phòng", it)
-            }
     }
+
 
 
     fun addRoom(room: Room, onResult: (Boolean) -> Unit) {
@@ -137,6 +158,8 @@ class RoomViewModel : ViewModel() {
             }
     }
 
+
+
     fun incrementRoomViewCount(roomId: String) {
         val roomRef = firestore.collection("rooms").document(roomId)
 
@@ -204,6 +227,26 @@ class RoomViewModel : ViewModel() {
             }
     }
 
+    fun getBookingRequestsFlow(userId: String): Flow<List<BookingRequest>> = callbackFlow {
+        val listenerRegistration = db.collection("booking_requests")
+            .whereEqualTo("userId", userId)
+            .orderBy("timestamp", Query.Direction.DESCENDING)
+            .addSnapshotListener { snapshot, exception ->
+                if (exception != null) {
+                    close(exception)
+                    return@addSnapshotListener
+                }
+
+                val requests = snapshot?.documents?.mapNotNull { document ->
+                    document.toObject(BookingRequest::class.java)?.copy(id = document.id)
+                } ?: emptyList()
+
+                trySend(requests)
+            }
+
+        awaitClose { listenerRegistration.remove() }
+    }
+
 
     // đánh giá
     fun submitReview(review: Review, onResult: (Boolean) -> Unit) {
@@ -248,11 +291,12 @@ class RoomViewModel : ViewModel() {
     //gửi để chủ trọ
     fun getBookingRequestsForLandlord(landlordId: String, onResult: (List<BookingRequest>) -> Unit) {
         db.collection("booking_requests")
+            .whereEqualTo("landlordId", landlordId)
             .orderBy("timestamp", Query.Direction.DESCENDING)
             .get()
             .addOnSuccessListener { result ->
                 val requests = result.map { it.toObject(BookingRequest::class.java) }
-                onResult(requests) // KHÔNG LỌC landlordId để test
+                onResult(requests)
             }
             .addOnFailureListener {
                 onResult(emptyList())
@@ -297,6 +341,29 @@ class RoomViewModel : ViewModel() {
             .addOnFailureListener { onResult(false) }
     }
 
+    fun fetchLandlordName(ownerId: String, onResult: (String) -> Unit) {
+        db.collection("users").document(ownerId).get()
+            .addOnSuccessListener { document ->
+                val name = document.getString("fullName") ?: "Không rõ tên"
+                onResult(name)
+            }
+            .addOnFailureListener {
+                onResult("Không rõ tên")
+            }
+    }
+
+    fun getRoomById(roomId: String, onResult: (Room?) -> Unit) {
+        db.collection("rooms").document(roomId)
+            .get()
+            .addOnSuccessListener { document ->
+                val room = document.toObject(Room::class.java)?.copy(id = document.id)
+                onResult(room)
+            }
+            .addOnFailureListener { e ->
+                Log.e("RoomViewModel", "Lỗi khi lấy dữ liệu phòng theo ID", e)
+                onResult(null)
+            }
+    }
 
     fun getLatestBookingStatus(userId: String, onResult: (String) -> Unit) {
         db.collection("booking_requests")
@@ -323,4 +390,37 @@ class RoomViewModel : ViewModel() {
     }
 
 
+
+    private val _users = mutableStateListOf<User>()
+    val users: List<User> get() = _users
+
+    fun fetchUsers() {
+        db.collection("users")
+            .get()
+            .addOnSuccessListener { result ->
+                _users.clear()
+                for (doc in result) {
+                    val user = doc.toObject(User::class.java).copy(id = doc.id)
+                    _users.add(user)
+                }
+            }
+            .addOnFailureListener {
+                Log.e("RoomViewModel", "Lỗi khi lấy danh sách người dùng", it)
+            }
+    }
+
+// ghi lịch sử xem
+//fun logRoomViewActivity(userId: String, roomId: String) {
+//    val log = ActivityLog(
+//        id = UUID.randomUUID().toString(),
+//        userId = userId,
+//        roomId = roomId
+//    )
+//    Firebase.firestore
+//        .collection("activity_logs")
+//        .document(log.id)
+//        .set(log)
+//}
+
 }
+
