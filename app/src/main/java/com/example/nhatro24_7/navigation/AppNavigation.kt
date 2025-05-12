@@ -1,5 +1,6 @@
 package com.example.nhatro24_7.navigation
 
+import android.net.Uri
 import androidx.compose.runtime.Composable
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -276,6 +277,7 @@ fun AppNavigation(
             ChatListScreen(
                 navController = navController,
                 chatViewModel = chatViewModel,
+                authViewModel = authViewModel
 //                roomViewModel = RoomViewModel()
             )
         }
@@ -291,8 +293,10 @@ fun AppNavigation(
         ) { backStackEntry ->
             val chatId = backStackEntry.arguments?.getString("chatId") ?: return@composable
             val receiverId = backStackEntry.arguments?.getString("receiverId") ?: return@composable
-            val receiverName = backStackEntry.arguments?.getString("receiverName") ?: "Người dùng"
-            val receiverAvatarUrl = backStackEntry.arguments?.getString("receiverAvatarUrl") ?: ""
+//            val receiverName = backStackEntry.arguments?.getString("receiverName") ?: "Người dùng"
+            val receiverName = Uri.decode(backStackEntry.arguments?.getString("receiverName") ?: "Người dùng")
+            val receiverAvatarUrl = Uri.decode(backStackEntry.arguments?.getString("receiverAvatarUrl") ?: "")
+
             val currentUserId = authViewModel.currentUser.value?.id ?: ""
 
             ChatScreen(

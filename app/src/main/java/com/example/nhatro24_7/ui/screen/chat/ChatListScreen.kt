@@ -1,6 +1,7 @@
 package com.example.nhatro24_7.ui.screen.chat
 
 import android.net.Uri
+import android.util.Log
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -19,6 +20,7 @@ import coil.compose.AsyncImage
 import com.example.nhatro24_7.data.model.ChatItem
 import com.example.nhatro24_7.navigation.Routes
 import com.example.nhatro24_7.util.formatTimestamp
+import com.example.nhatro24_7.viewmodel.AuthViewModel
 import com.example.nhatro24_7.viewmodel.ChatViewModel
 import com.google.firebase.auth.FirebaseAuth
 
@@ -26,8 +28,10 @@ import com.google.firebase.auth.FirebaseAuth
 @Composable
 fun ChatListScreen(
     navController: NavController,
-    chatViewModel: ChatViewModel
+    chatViewModel: ChatViewModel,
+    authViewModel: AuthViewModel
 ) {
+//    val currentUserId = authViewModel.currentUser.value?.id ?: return
     val currentUserId = FirebaseAuth.getInstance().currentUser?.uid ?: return
     val chatItems by chatViewModel.chatList.observeAsState(emptyList())
 
@@ -55,15 +59,20 @@ fun ChatListScreen(
                 LazyColumn {
                     items(chatItems) { chat ->
                         ChatListItem(chat = chat) {
-                            navController.navigate(
-                                Routes.customerChatRoute(
-                                    chat.chatId,
-                                    chat.otherUserId,
-                                    Uri.encode(chat.otherUsername),
-                                    Uri.encode(chat.otherAvatarUrl)
-                                )
-                            )
+                            val chatId = Uri.encode(chat.chatId)
+                            val receiverId = Uri.encode(chat.otherUserId)
+                            val receiverName = Uri.encode(chat.otherUsername)
+                            val receiverAvatarUrl = Uri.encode(chat.otherAvatarUrl)
+
+                            val route = Routes.customerChatRoute(chatId, receiverId, receiverName, receiverAvatarUrl)
+
+                            Log.d("ChatNavigation", "Navigating to: $route")
+                            Log.d("ChatNavigation", "Navigate to: customer_chat/${chat.chatId}/${chat.otherUserId}/${chat.otherUsername}/${chat.otherAvatarUrl}")
+
+
+                            navController.navigate(route)
                         }
+
                         Divider()
                     }
                 }

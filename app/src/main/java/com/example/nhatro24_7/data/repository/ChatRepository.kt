@@ -1,5 +1,7 @@
 package com.example.nhatro24_7.data.repository
 
+import android.content.Context
+import android.net.Uri
 import com.example.nhatro24_7.data.model.Message
 import com.example.nhatro24_7.data.model.ChatItem
 import com.google.firebase.firestore.FirebaseFirestore
@@ -144,5 +146,17 @@ class ChatRepository @Inject constructor(
                     }
             }
         }
+    }
+
+    fun getFileNameFromUri(context: Context, uri: Uri): String {
+        var name = "Tập tin"
+        val cursor = context.contentResolver.query(uri, null, null, null, null)
+        cursor?.use {
+            val nameIndex = it.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME)
+            if (it.moveToFirst() && nameIndex >= 0) {
+                name = it.getString(nameIndex)
+            }
+        }
+        return name
     }
 }

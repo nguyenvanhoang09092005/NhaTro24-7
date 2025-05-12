@@ -1,5 +1,7 @@
 package com.example.nhatro24_7.viewmodel
 
+import android.content.Context
+import android.net.Uri
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -42,6 +44,10 @@ class ChatViewModel @Inject constructor(
         chatRepository.getChatListForUser(currentUserId) {
             chatList.postValue(it)
         }
+    }
+
+    fun getFileName(context: Context, uri: Uri): String {
+        return chatRepository.getFileNameFromUri(context, uri)
     }
 }
 
