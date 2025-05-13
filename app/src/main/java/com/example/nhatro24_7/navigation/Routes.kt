@@ -1,5 +1,8 @@
 package com.example.nhatro24_7.navigation
 
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
+
 object Routes {
     // Auth
     const val SPLASH = "splash"
@@ -21,8 +24,20 @@ object Routes {
     const val BOOKING_PENDING = "bookingPending"
     const val CUSTOMER_NOTIFICATIONS = "customer_notifications"
     const val CUSTOMER_BOOKING_HISTORY = "customer_booking_history"
-    const val PAYMENT_SCREEN = "paymentScreen/{bookingRequestId}/{roomId}"
-    fun paymentScreenWithId(bookingRequestId: String, roomId: String) = "paymentScreen/$bookingRequestId/$roomId"
+    const val PAYMENT_SCREEN = "payment_screen"
+    fun paymentScreenRoute(bookingRequestId: String, roomId: String): String =
+        "$PAYMENT_SCREEN/$bookingRequestId/$roomId"
+    const val PAYMENT_SCREEN_WITH_ARGS = "payment_screen/{bookingRequestId}/{roomId}"
+    const val QR_TRANSFER_SCREEN = "qr_transfer_screen/{amount}/{transferContent}"
+
+    fun qrTransferScreenRoute(amount: Long, transferContent: String): String {
+        val encoded = URLEncoder.encode(transferContent, StandardCharsets.UTF_8.toString())
+        return "qr_transfer_screen/$amount/$encoded"
+    }
+
+    //
+//    fun paymentScreenWithId(bookingRequestId: String, roomId: String) = "paymentScreen/$bookingRequestId/$roomId"
+    const val TERMANDPOLICY = "termAndPolicy"
 
     // Landlord
     const val LANDLORD_HOME = "landlord_home"
@@ -32,6 +47,10 @@ object Routes {
     const val LANDLORD_PROFILE_DETAIL = "landlord_profile_detail"
     const val LANDLORD_BOOKING_REQUESTS = "landlord_booking_requests"
     const val BOOKING_DETAIL = "booking_detail/{bookingRequestId}"
+    const val ROOM_LIST = "room_list"
+    const val LANDLORD_STATISTIC_ROUTE = "landlord_statistic"
+    fun landlordStatisticRoute(landlordId: String) = "$LANDLORD_STATISTIC_ROUTE/$landlordId"
+
 
     const val CUSTOMER_CHAT = "customer_chat/{chatId}/{receiverId}/{receiverName}/{receiverAvatarUrl}"
     const val LANDLORD_CHAT = "landlord_chat/{chatId}/{receiverId}/{receiverName}/{receiverAvatarUrl}"

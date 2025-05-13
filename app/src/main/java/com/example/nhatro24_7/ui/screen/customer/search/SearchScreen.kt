@@ -28,6 +28,7 @@ import com.example.nhatro24_7.ui.screen.customer.component.BottomNavBar
 import com.example.nhatro24_7.viewmodel.RoomViewModel
 import com.google.accompanist.flowlayout.FlowRow
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.ui.graphics.vector.ImageVector
 
 @Composable
 fun SearchScreen(
@@ -77,7 +78,8 @@ fun SearchScreen(
                 placeholder = {
                     Text(
                         text = "Tìm kiếm theo địa chỉ...",
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                        style = MaterialTheme.typography.bodyMedium
                     )
                 },
                 leadingIcon = {
@@ -89,16 +91,25 @@ fun SearchScreen(
                 },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp)
-                    .clip(RoundedCornerShape(16.dp)),
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                    .clip(RoundedCornerShape(24.dp))
+                    .background(
+                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f),
+                        shape = RoundedCornerShape(24.dp)
+                    ),
                 colors = OutlinedTextFieldDefaults.colors(
+                    focusedContainerColor = Color.Transparent,
+                    unfocusedContainerColor = Color.Transparent,
                     focusedBorderColor = MaterialTheme.colorScheme.primary,
                     unfocusedBorderColor = MaterialTheme.colorScheme.outline,
-                    focusedLeadingIconColor = MaterialTheme.colorScheme.primary, // Chỉnh màu biểu tượng khi có focus
-                    unfocusedLeadingIconColor = MaterialTheme.colorScheme.onSurfaceVariant // Chỉnh màu biểu tượng khi không có focus
+                    cursorColor = MaterialTheme.colorScheme.primary,
+                    focusedLeadingIconColor = MaterialTheme.colorScheme.primary,
+                    unfocusedLeadingIconColor = MaterialTheme.colorScheme.onSurfaceVariant
                 ),
-                singleLine = true
+                singleLine = true,
+                shape = RoundedCornerShape(24.dp)
             )
+
 
 
             Spacer(modifier = Modifier.height(12.dp))
@@ -106,23 +117,30 @@ fun SearchScreen(
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
-                shape = RoundedCornerShape(10.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                elevation = CardDefaults.cardElevation(4.dp)
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                shape = RoundedCornerShape(16.dp),
+                elevation = CardDefaults.cardElevation(6.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                )
             ) {
-                Column(modifier = Modifier.padding(12.dp)) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
                     AreaFilterSection(selectedAreaRange)
                     PriceFilterSection(selectedMinPrice, selectedMaxPrice)
                 }
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
             if (filteredRooms.isNotEmpty()) {
                 LazyColumn(
                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     items(filteredRooms) { room ->
                         RoomCardItem(room = room) {
@@ -132,12 +150,28 @@ fun SearchScreen(
                 }
             } else {
                 Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(top = 80.dp), // đẩy thông báo xuống một chút
+                    contentAlignment = Alignment.TopCenter
                 ) {
-                    Text("Không tìm thấy phòng phù hợp.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(
+                            imageVector = Icons.Default.Search,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                            modifier = Modifier.size(48.dp)
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Text(
+                            text = "Không tìm thấy phòng phù hợp.",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+                    }
                 }
             }
+
         }
     }
 }
@@ -162,13 +196,13 @@ fun AreaFilterSection(selectedOption: MutableState<String?>) {
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             val areaOptions = listOf(
-                "<20" to "Dưới 20m",
-                "20-30" to "20m - 30m",
-                ">30" to "Trên 30m"
+                "<20" to "Dưới 20m²",
+                "20-30" to "20m² - 30m²",
+                ">30" to "Trên 30m²"
             )
 
             areaOptions.forEach { (value, label) ->
@@ -177,8 +211,8 @@ fun AreaFilterSection(selectedOption: MutableState<String?>) {
                     onClick = {
                         selectedOption.value = if (selectedOption.value == value) null else value
                     },
-                    label = { Text(label) },
-                    shape = RoundedCornerShape(8.dp),
+                    label = { Text(label, fontSize = 13.sp) },
+                    shape = RoundedCornerShape(10.dp),
                     colors = FilterChipDefaults.filterChipColors(
                         selectedContainerColor = MaterialTheme.colorScheme.primary,
                         containerColor = MaterialTheme.colorScheme.surfaceVariant
@@ -188,7 +222,6 @@ fun AreaFilterSection(selectedOption: MutableState<String?>) {
         }
     }
 }
-
 @Composable
 fun PriceFilterSection(
     selectedMinPrice: MutableState<Float>,
@@ -210,11 +243,8 @@ fun PriceFilterSection(
         )
 
         Column(modifier = Modifier.padding(horizontal = 16.dp)) {
-
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 4.dp),
+                modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
@@ -252,86 +282,100 @@ fun PriceFilterSection(
                     .padding(top = 4.dp),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Text(text = "0đ", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Text(text = "5.000.000đ", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("0đ", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("5.000.000đ", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
     }
 }
-
 @Composable
 fun RoomCardItem(room: Room, onClick: () -> Unit) {
-    Column(
+    Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { onClick() }
-            .padding(horizontal = 12.dp, vertical = 8.dp)
+            .clickable { onClick() },
+        shape = RoundedCornerShape(14.dp),
+        elevation = CardDefaults.cardElevation(4.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
-        Row(modifier = Modifier.fillMaxWidth()) {
-            Box(modifier = Modifier.width(130.dp)) {
-                AsyncImage(
-                    model = room.mainImage,
-                    contentDescription = null,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier
-                        .height(110.dp)
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(8.dp))
-                )
-
-                Box(
-                    modifier = Modifier
-                        .align(Alignment.TopStart)
-                        .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(bottomEnd = 8.dp))
-                        .padding(horizontal = 6.dp, vertical = 4.dp)
-                ) {
-                    val priceInMillions = room.price / 1_000_000f
-                    Text(
-                        text = "${"%.1f".format(priceInMillions)} triệu",
-                        color = MaterialTheme.colorScheme.onPrimary,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 14.sp
+        Column(modifier = Modifier.padding(12.dp)) {
+            Row(modifier = Modifier.fillMaxWidth()) {
+                Box(modifier = Modifier.width(130.dp)) {
+                    AsyncImage(
+                        model = room.mainImage,
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .height(110.dp)
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(10.dp))
                     )
+
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.TopStart)
+                            .background(
+                                MaterialTheme.colorScheme.primary,
+                                RoundedCornerShape(bottomEnd = 8.dp)
+                            )
+                            .padding(horizontal = 6.dp, vertical = 4.dp)
+                    ) {
+                        val priceInMillions = room.price / 1_000_000f
+                        Text(
+                            text = "${"%.1f".format(priceInMillions)} triệu",
+                            color = MaterialTheme.colorScheme.onPrimary,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 13.sp
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.width(12.dp))
+
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(end = 4.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Text(
+                        text = room.title,
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 16.sp,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+
+                    InfoRow(icon = Icons.Default.Place, text = room.location)
+                    InfoRow(icon = Icons.Default.Straighten, text = "${room.area} m²")
+                    InfoRow(icon = Icons.Default.MeetingRoom, text = room.roomType)
                 }
             }
-
-            Spacer(modifier = Modifier.width(12.dp))
-
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(end = 4.dp),
-                verticalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                Text(
-                    text = room.title,
-                    fontWeight = FontWeight.SemiBold,
-                    fontSize = 16.sp,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-
-                InfoRow(icon = Icons.Default.Place, text = room.location)
-                InfoRow(icon = Icons.Default.Straighten, text = "${room.area} m²")
-                InfoRow(icon = Icons.Default.MeetingRoom, text = room.roomType)
-            }
         }
-
-        Spacer(modifier = Modifier.height(20.dp))
-
-        Divider(
-            thickness = 1.dp,
-            color = MaterialTheme.colorScheme.outlineVariant
-        )
     }
 }
-
 @Composable
-fun InfoRow(icon: androidx.compose.ui.graphics.vector.ImageVector, text: String, color: Color = MaterialTheme.colorScheme.onSurfaceVariant) {
-    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 2.dp)) {
-        Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(18.dp))
+fun InfoRow(
+    icon: ImageVector,
+    text: String,
+    color: Color = MaterialTheme.colorScheme.onSurfaceVariant
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.padding(top = 1.dp)
+    ) {
+        Icon(
+            icon,
+            contentDescription = null,
+            tint = color,
+            modifier = Modifier.size(16.dp)
+        )
         Spacer(modifier = Modifier.width(6.dp))
-        Text(text, color = color, style = MaterialTheme.typography.bodySmall)
+        Text(
+            text,
+            color = color,
+            style = MaterialTheme.typography.bodySmall
+        )
     }
 }

@@ -367,6 +367,26 @@ class RoomViewModel : ViewModel() {
             }
     }
 
+    // lấy danh sách phòng theo chủ trọ
+    private val _roomsByLandlord = MutableStateFlow<List<Room>>(emptyList())
+    val roomsByLandlord: StateFlow<List<Room>> = _roomsByLandlord
+
+    fun getRoomsByLandlord(uid: String) {
+        viewModelScope.launch {
+            Firebase.firestore.collection("rooms")
+                .whereEqualTo("owner_id", uid)
+                .addSnapshotListener { snapshot, error ->
+                    if (error != null || snapshot == null) return@addSnapshotListener
+
+                    val rooms = snapshot.documents.mapNotNull {
+                        it.toObject(Room::class.java)?.copy(id = it.id)
+                    }
+
+                    _roomsByLandlord.value = rooms
+                }
+        }
+    }
+
     fun getLatestBookingStatus(userId: String, onResult: (String) -> Unit) {
         db.collection("booking_requests")
             .whereEqualTo("userId", userId)
@@ -427,38 +447,40 @@ class RoomViewModel : ViewModel() {
 
 
     // hủy/ trả phòng
-    private val _cancelSuccess = MutableLiveData<Boolean>()
-    val cancelSuccess: LiveData<Boolean> = _cancelSuccess
+    private val _returnSuccessMap = MutableStateFlow<Map<String, Boolean>>(emptyMap())
+    val returnSuccessMap: StateFlow<Map<String, Boolean>> = _returnSuccessMap
 
-    private val _checkoutSuccess = MutableLiveData<Boolean>()
-    val checkoutSuccess: LiveData<Boolean> = _checkoutSuccess
+    private val _cancelSuccessMap = MutableStateFlow<Map<String, Boolean>>(emptyMap())
+    val cancelSuccessMap: StateFlow<Map<String, Boolean>> = _cancelSuccessMap
 
+    fun cancelBooking(bookingId: String, roomId: String) {
+        val bookingRef = db.collection("booking_requests").document(bookingId)
+        val roomRef = db.collection("rooms").document(roomId)
 
-    fun cancelBooking(bookingId: String) {
-        val bookingRef = db.collection("bookings").document(bookingId)
         bookingRef.update("status", "cancelled")
             .addOnSuccessListener {
-                _cancelSuccess.value = true
-            }
-            .addOnFailureListener {
-                _cancelSuccess.value = false
-            }
-    }
-
-    fun checkoutBooking(bookingId: String) {
-        val bookingRef = db.collection("bookings").document(bookingId)
-        bookingRef.update("status", "checked_out")
-            .addOnSuccessListener {
-                _checkoutSuccess.value = true
-            }
-            .addOnFailureListener {
-                _checkoutSuccess.value = false
+                roomRef.update("isAvailable", true)
+                    .addOnSuccessListener {
+                        _cancelSuccessMap.value = _cancelSuccessMap.value.toMutableMap().apply {
+                            put(bookingId, true)
+                        }
+                    }
             }
     }
 
-    fun returnRoom(bookingId: String) {
-        val bookingRef = Firebase.firestore.collection("bookingRequests").document(bookingId)
+    fun returnRoom(bookingId: String, roomId: String) {
+        val bookingRef = db.collection("booking_requests").document(bookingId)
+        val roomRef = db.collection("rooms").document(roomId)
+
         bookingRef.update("status", "returned")
+            .addOnSuccessListener {
+                roomRef.update("isAvailable", true)
+                    .addOnSuccessListener {
+                        _returnSuccessMap.value = _returnSuccessMap.value.toMutableMap().apply {
+                            put(bookingId, true)
+                        }
+                    }
+            }
     }
 
 

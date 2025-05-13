@@ -9,6 +9,8 @@ import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.SetOptions
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
+import com.google.firebase.Firebase
+import com.google.firebase.firestore.firestore
 import javax.inject.Inject
 
 class ChatRepository @Inject constructor(
@@ -159,4 +161,6 @@ class ChatRepository @Inject constructor(
         }
         return name
     }
+
+
 }

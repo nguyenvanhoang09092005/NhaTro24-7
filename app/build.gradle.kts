@@ -88,8 +88,11 @@ dependencies {
     implementation("androidx.hilt:hilt-navigation-compose:1.0.0")
     kapt("com.google.dagger:hilt-compiler:2.48")
 
-    implementation("com.squareup.okhttp3:okhttp:4.9.3")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
+
+    //qr]
+    implementation("com.google.zxing:core:3.5.1")
+    implementation("androidx.compose.ui:ui-graphics:1.5.0")
 
     // Material Icons (đã kiểm tra version)
     implementation("androidx.compose.material:material-icons-extended:1.6.4")

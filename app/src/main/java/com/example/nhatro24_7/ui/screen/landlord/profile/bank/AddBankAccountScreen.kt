@@ -48,7 +48,7 @@ fun AddBankAccountScreen(navController: NavController, viewModel: AuthViewModel)
         Bank("VIB", R.drawable.vib),
         Bank("VietCapital Bank", R.drawable.vietcapital),
         Bank("Saigonbank", R.drawable.saigonbank),
-        Bank("Viẹtinbank", R.drawable.vietinbank),
+        Bank("Vietinbank", R.drawable.vietinbank),
         Bank("HDBank", R.drawable.hdbank),
         Bank("SeABank", R.drawable.seabank),
         Bank("ABBANK", R.drawable.abbank),

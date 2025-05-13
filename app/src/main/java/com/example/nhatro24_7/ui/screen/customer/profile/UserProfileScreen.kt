@@ -7,11 +7,15 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -21,10 +25,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
+import com.example.nhatro24_7.ui.screen.landlord.profile.EditableField
+import com.example.nhatro24_7.ui.screen.landlord.profile.SectionTitle
 import com.example.nhatro24_7.util.deleteImageFromCloudinary
 import com.example.nhatro24_7.util.uploadImageToCloudinary
 import com.example.nhatro24_7.viewmodel.AuthViewModel
@@ -46,6 +54,7 @@ fun UserProfileScreen(viewModel: AuthViewModel) {
 
     var isEditing by remember { mutableStateOf(false) }
     var isLoading by remember { mutableStateOf(false) }
+    val scrollState = rememberScrollState()
 
     var avatarUrl by remember { mutableStateOf("") }
     var avatarPublicId by remember { mutableStateOf("") }
@@ -129,11 +138,56 @@ fun UserProfileScreen(viewModel: AuthViewModel) {
         }
     }
 
-    Scaffold(snackbarHost = { SnackbarHost(snackbarHostState) }) { innerPadding ->
+    Scaffold(snackbarHost = { SnackbarHost(snackbarHostState) },
+        topBar = {
+            TopAppBar(
+                title = { Text("Hồ sơ") },
+                actions = {
+                    IconButton(
+                        onClick = {
+                            if (isEditing) {
+                                scope.launch {
+                                    isLoading = true
+                                    try {
+                                        val updatedData = mapOf(
+                                            "username" to username,
+                                            "phone" to phone,
+                                            "birthDate" to birthDate,
+                                            "hometown" to hometown,
+                                            "currentAddress" to currentAddress
+                                        )
+                                        FirebaseFirestore.getInstance()
+                                            .collection("users")
+                                            .document(userId)
+                                            .update(updatedData)
+                                            .await()
+                                        snackbarHostState.showSnackbar("Cập nhật thành công")
+                                        isEditing = false
+                                    } catch (e: Exception) {
+                                        snackbarHostState.showSnackbar("Lỗi: ${e.localizedMessage}")
+                                    } finally {
+                                        isLoading = false
+                                    }
+                                }
+                            } else {
+                                isEditing = true
+                            }
+                        },
+                        enabled = !isLoading
+                    ) {
+                        Icon(
+                            imageVector = if (isEditing) Icons.Default.Check else Icons.Default.Edit,
+                            contentDescription = if (isEditing) "Lưu" else "Chỉnh sửa"
+                        )
+                    }
+                }
+            )
+        }) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
+                .verticalScroll(scrollState)
                 .padding(16.dp)
                 .background(MaterialTheme.colorScheme.background),
             horizontalAlignment = Alignment.CenterHorizontally
@@ -195,7 +249,7 @@ fun UserProfileScreen(viewModel: AuthViewModel) {
             }
 
             Spacer(modifier = Modifier.height(16.dp))
-            Text("Thông tin cá nhân", fontSize = 20.sp, color = MaterialTheme.colorScheme.primary)
+            SectionTitle("Thông tin cá nhân")
             Spacer(modifier = Modifier.height(16.dp))
 
             EditableField("Tên người dùng", username, isEditing) { username = it }
@@ -206,75 +260,6 @@ fun UserProfileScreen(viewModel: AuthViewModel) {
             EditableField("Nơi ở hiện tại", currentAddress, isEditing) { currentAddress = it }
 
             Spacer(modifier = Modifier.height(24.dp))
-
-            val buttonText = when {
-                isLoading -> "Đang lưu..."
-                isEditing -> "Cập nhật thông tin"
-                else -> "Chỉnh sửa thông tin"
-            }
-
-            Button(
-                onClick = {
-                    if (isEditing) {
-                        scope.launch {
-                            isLoading = true
-                            try {
-                                val updatedData = mapOf(
-                                    "username" to username,
-                                    "phone" to phone,
-                                    "birthDate" to birthDate,
-                                    "hometown" to hometown,
-                                    "currentAddress" to currentAddress
-                                )
-                                FirebaseFirestore.getInstance()
-                                    .collection("users")
-                                    .document(userId)
-                                    .update(updatedData)
-                                    .await()
-                                snackbarHostState.showSnackbar("Cập nhật thành công")
-                                isEditing = false
-                            } catch (e: Exception) {
-                                snackbarHostState.showSnackbar("Lỗi: ${e.localizedMessage}")
-                            } finally {
-                                isLoading = false
-                            }
-                        }
-                    } else {
-                        isEditing = true
-                    }
-                },
-                enabled = !isLoading,
-                shape = RoundedCornerShape(12.dp),
-                modifier = Modifier.fillMaxWidth().height(50.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
-            ) {
-                Text(buttonText, fontSize = 16.sp, color = Color.White)
-            }
         }
-    }
-}
-
-@Composable
-fun EditableField(
-    label: String,
-    value: String,
-    editable: Boolean,
-    keyboardType: KeyboardType = KeyboardType.Text,
-    onValueChange: (String) -> Unit
-) {
-    Column(modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp)) {
-        Text(text = label, fontSize = 14.sp, color = Color.Gray)
-        if (editable) {
-            OutlinedTextField(
-                value = value,
-                onValueChange = onValueChange,
-                keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true
-            )
-        } else {
-            Text(text = value, fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurface)
-        }
-        HorizontalDivider(modifier = Modifier.padding(top = 4.dp))
     }
 }

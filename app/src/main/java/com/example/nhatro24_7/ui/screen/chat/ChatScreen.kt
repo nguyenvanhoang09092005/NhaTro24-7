@@ -88,8 +88,8 @@ fun ChatScreen(
     var expandedImageUrl by remember { mutableStateOf<String?>(null) }
 
     // Định nghĩa các màu cho tin nhắn
-    val senderMessageColor = Color(0xFF4776E6)
-    val receivedMessageColor = Color(0xFFF3F4F6)
+    val senderMessageColor = Color(0xF05681E7)
+    val receivedMessageColor = Color(0xEE784DD9)
     val context = LocalContext.current
     var imageUri by remember { mutableStateOf<Uri?>(null) }
     var fileUri by remember { mutableStateOf<Uri?>(null) }

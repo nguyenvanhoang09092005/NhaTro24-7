@@ -14,11 +14,17 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import coil.compose.rememberAsyncImagePainter
 import com.example.nhatro24_7.viewmodel.RoomViewModel
 import com.example.nhatro24_7.data.model.Room
+import com.example.nhatro24_7.navigation.Routes.qrTransferScreenRoute
+import com.example.nhatro24_7.viewmodel.PaymentViewModel
 import java.text.NumberFormat
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
+
 import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -26,14 +32,26 @@ import java.util.*
 fun PaymentScreen(
     navController: NavHostController,
     roomId: String,
+//    userId: String,
+//    amount: Double,
     bookingRequestId: String,
-    roomViewModel: RoomViewModel
+    roomViewModel: RoomViewModel,
+    paymentViewModel: PaymentViewModel = hiltViewModel()
 ) {
     var room by remember { mutableStateOf<Room?>(null) }
     var isLoading by remember { mutableStateOf(true) }
+    var selectedPayment by remember { mutableStateOf("Chuyển khoản") }
     val formatter = NumberFormat.getCurrencyInstance(Locale("vi", "VN"))
 
+    LaunchedEffect(paymentViewModel.paymentSuccess) {
+        if (paymentViewModel.paymentSuccess) {
+            navController.navigate("payment_success") {
+                popUpTo("payment") { inclusive = true } // Xóa khỏi backstack nếu muốn
+            }
+        }
+    }
 
+    // Lấy thông tin phòng
     LaunchedEffect(roomId) {
         roomViewModel.getRoomById(roomId) { fetchedRoom ->
             room = fetchedRoom
@@ -44,13 +62,7 @@ fun PaymentScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = {
-                    Text(
-                        "Thanh Toán",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold
-                    )
-                },
+                title = { Text("Thanh Toán", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
@@ -72,6 +84,7 @@ fun PaymentScreen(
                 val totalAmount = currentRoom.price
                 val transferNote = "ThanhToanPhong-${roomId}"
 
+                // Tạo nội dung chuyển khoản
                 val bankTransferContent = generateBankTransferContent(
                     bankName = landlordBankName,
                     accountNumber = landlordBankAccount,
@@ -79,13 +92,14 @@ fun PaymentScreen(
                     amount = totalAmount,
                     note = transferNote
                 )
+
                 Column(
                     modifier = Modifier
                         .verticalScroll(rememberScrollState())
                         .padding(paddingValues)
                         .padding(16.dp)
                 ) {
-                    // Ảnh lớn phòng
+                    // Ảnh phòng
                     Image(
                         painter = rememberAsyncImagePainter(currentRoom.mainImage),
                         contentDescription = null,
@@ -120,7 +134,7 @@ fun PaymentScreen(
                         shape = RoundedCornerShape(12.dp),
                         modifier = Modifier.fillMaxWidth().shadow(2.dp)
                     ) {
-                        val total = currentRoom.price + 500000
+                        val total = currentRoom.price
                         Column(Modifier.padding(16.dp)) {
                             Text("Chi Tiết Thanh Toán", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.primary)
@@ -129,10 +143,7 @@ fun PaymentScreen(
                                 Text("Tiền thuê")
                                 Text(formatter.format(currentRoom.price))
                             }
-                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                Text("Điện, nước, internet")
-                                Text(formatter.format(500000))
-                            }
+
                             Divider(Modifier.padding(vertical = 6.dp))
                             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                                 Text("Tổng cộng", fontWeight = FontWeight.Bold)
@@ -145,7 +156,7 @@ fun PaymentScreen(
 
                     Spacer(Modifier.height(16.dp))
 
-                    // Phương thức thanh toán (tất cả trong 1 card)
+                    // Phương thức thanh toán
                     var selectedPayment by remember { mutableStateOf("Thẻ ngân hàng") }
                     val payments = listOf("Thẻ ngân hàng", "Ví điện tử", "Chuyển khoản", "Tiền mặt")
 
@@ -207,25 +218,42 @@ fun PaymentScreen(
 
                     Spacer(Modifier.height(20.dp))
 
+                    // Nút thanh toán
                     Button(
                         onClick = {
-                            roomViewModel.updateBookingStatus(bookingRequestId, "paid") { success ->
-                                if (success) {
-                                    navController.navigate("customer_booking_history") {
-                                        popUpTo("customer_booking_history") { inclusive = true }
-                                    }
-                                } else {
-                                    // Xử lý khi cập nhật thất bại
-                                }
+//                            roomViewModel.updateBookingStatus(bookingRequestId, "paid") { success ->
+//                                if (success) {
+//                                    navController.navigate("customer_booking_history") {
+//                                        popUpTo("customer_booking_history") { inclusive = true }
+//                                    }
+//                                } else {
+//                                    // Xử lý khi cập nhật thất bại
+//                                }
+//                            }
+                            if (selectedPayment == "Chuyển khoản") {
+                                // Tạo nội dung chuyển khoản
+                                val transferContent = generateBankTransferContent(
+                                    bankName = landlordBankName,
+                                    accountNumber = landlordBankAccount,
+                                    accountName = landlordName,
+                                    amount = totalAmount,
+                                    note = transferNote
+                                )
+
+                                // Chuyển đến màn hình tạo mã QR
+                                val amountLong = totalAmount.toLong()
+                                val encodedContent = URLEncoder.encode(transferContent, StandardCharsets.UTF_8.toString())
+
+                                navController.navigate("qr_transfer_screen/$amountLong/$encodedContent")
+
+
                             }
                         },
+
                         modifier = Modifier.fillMaxWidth().height(56.dp),
                         shape = RoundedCornerShape(12.dp)
                     ) {
-                        Text(
-                            "Thanh toán ngay ${formatter.format(totalAmount)}",
-                            style = MaterialTheme.typography.titleMedium
-                        )
+                        Text("Thanh toán ngay ${formatter.format(totalAmount)}", style = MaterialTheme.typography.titleMedium)
                     }
 
                     Spacer(Modifier.height(12.dp))
@@ -242,6 +270,7 @@ fun PaymentScreen(
         }
     }
 }
+
 fun generateBankTransferContent(
     bankName: String,
     accountNumber: String,
@@ -257,3 +286,4 @@ fun generateBankTransferContent(
         ➤ Nội dung chuyển khoản: $note
     """.trimIndent()
 }
+

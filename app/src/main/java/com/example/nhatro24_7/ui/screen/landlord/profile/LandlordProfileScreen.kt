@@ -52,7 +52,7 @@ fun LandlordProfileScreen(viewModel: AuthViewModel, navController: NavController
 
     var avatarUrl by remember { mutableStateOf("") }
     var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
-
+    var isLoading by remember { mutableStateOf(false) }
     var username by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var phone by remember { mutableStateOf("") }
@@ -153,7 +153,39 @@ fun LandlordProfileScreen(viewModel: AuthViewModel, navController: NavController
             TopAppBar(
                 title = { Text("Hồ sơ chủ trọ") },
                 actions = {
-                    IconButton(onClick = { isEditing = !isEditing }) {
+                    IconButton(
+                        onClick = {
+                            if (isEditing) {
+                                scope.launch {
+                                    isLoading = true
+                                    try {
+                                        val updatedData = mapOf(
+                                            "username" to username,
+                                            "landlordIdNumber" to landlordIdNumber,
+                                            "phone" to phone,
+                                            "birthDate" to birthDate,
+                                            "hometown" to hometown,
+                                            "currentAddress" to currentAddress
+                                        )
+                                        FirebaseFirestore.getInstance()
+                                            .collection("users")
+                                            .document(userId)
+                                            .update(updatedData)
+                                            .await()
+                                        snackbarHostState.showSnackbar("Cập nhật thành công")
+                                        isEditing = false
+                                    } catch (e: Exception) {
+                                        snackbarHostState.showSnackbar("Lỗi: ${e.localizedMessage}")
+                                    } finally {
+                                        isLoading = false
+                                    }
+                                }
+                            } else {
+                                isEditing = true
+                            }
+                        },
+                        enabled = !isLoading
+                    ) {
                         Icon(
                             imageVector = if (isEditing) Icons.Default.Check else Icons.Default.Edit,
                             contentDescription = if (isEditing) "Lưu" else "Chỉnh sửa"
@@ -234,7 +266,13 @@ fun EditableField(
     onValueChange: (String) -> Unit = {}
 ) {
     Column(modifier = Modifier.fillMaxWidth()) {
-        Text(text = label, fontSize = 14.sp, color = Color.Gray)
+        Text(
+            text = label,
+            fontSize = 14.sp,
+            color = Color.Gray,
+            modifier = Modifier.padding(bottom = 4.dp)
+        )
+
         if (isEditing) {
             OutlinedTextField(
                 value = value,
@@ -242,11 +280,12 @@ fun EditableField(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 4.dp),
-                label = { Text(label) },
                 enabled = editable,
                 visualTransformation = if (isPassword) PasswordVisualTransformation() else VisualTransformation.None,
                 singleLine = true,
-                shape = RoundedCornerShape(12.dp)
+                shape = RoundedCornerShape(12.dp),
+                keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
+                placeholder = { Text("Nhập $label") }
             )
         } else {
             Text(
@@ -257,6 +296,7 @@ fun EditableField(
                 fontSize = 16.sp
             )
         }
+
+        Spacer(modifier = Modifier.height(8.dp))
     }
-    Spacer(modifier = Modifier.height(8.dp))
 }

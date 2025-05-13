@@ -156,7 +156,7 @@ fun ProfileScreen(
                     items = listOf(
                         Triple("Lịch sử đã xem", Icons.Default.History,Routes.CUSTOMER_HISTORY),
                         Triple("Lịch sử đặt phòng", Icons.Default.Hotel, "customer_booking_history"),
-                        Triple("Lịch sử hủy phòng", Icons.Default.Cancel, "cancel_history"),
+//                        Triple("Lịch sử hủy phòng", Icons.Default.Cancel, "cancel_history"),
                         Triple("Đánh giá đã gửi", Icons.Default.RateReview, "review_history")
                     ),
                     navController = navController
@@ -361,26 +361,26 @@ fun SettingRoleSwitchItem(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(16.dp)
-            .clickable { onRoleToggle() }
-            .height(56.dp),
+            .padding(horizontal = 16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(
             imageVector = roleIcon,
             contentDescription = "Vai trò",
-            modifier = Modifier.size(24.dp),
+            modifier = Modifier.size(20.dp),
             tint = MaterialTheme.colorScheme.primary
         )
         Spacer(modifier = Modifier.width(16.dp))
         Text(
             text = "$title: $roleTitle",
-            style = MaterialTheme.typography.bodyLarge,
-            modifier = Modifier.weight(1f)
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.weight(1f),
+            fontSize = 16.sp
         )
         Switch(
             checked = currentRole == "landlord",
-            onCheckedChange = { onRoleToggle() }
+            onCheckedChange = { onRoleToggle() },
+            modifier = Modifier.scale(0.7f)
         )
     }
 }

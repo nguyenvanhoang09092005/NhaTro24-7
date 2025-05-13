@@ -41,6 +41,7 @@ import kotlinx.coroutines.launch
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import com.example.nhatro24_7.ui.screen.component.CommonTopBar
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -97,7 +98,7 @@ fun CustomerHomeScreen(
             BottomNavBar(navController = navController)
         },
         topBar = {
-            EnhancedTopAppBar("Nhà Trọ 24/7")
+            CommonTopBar("Nhà Trọ 24/7")
         }
     ) { padding ->
         Column(

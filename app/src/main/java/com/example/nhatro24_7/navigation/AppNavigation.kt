@@ -2,8 +2,11 @@ package com.example.nhatro24_7.navigation
 
 import android.net.Uri
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -23,6 +26,7 @@ import com.example.nhatro24_7.ui.screen.customer.detail.LandlordDetailScreen
 import com.example.nhatro24_7.ui.screen.customer.home.CustomerHomeScreen
 import com.example.nhatro24_7.ui.screen.customer.home.RoomDetailScreen
 import com.example.nhatro24_7.ui.screen.customer.payment.PaymentScreen
+import com.example.nhatro24_7.ui.screen.customer.policy.TermsAndPolicyScreen
 //import com.example.nhatro24_7.ui.screen.customer.payment.QRTransferScreen
 import com.example.nhatro24_7.ui.screen.customer.profile.*
 import com.example.nhatro24_7.ui.screen.customer.profile.account.ChangePasswordScreen
@@ -40,13 +44,21 @@ import com.example.nhatro24_7.ui.screen.landlord.profile.bank.PaymentMethodsScre
 import com.example.nhatro24_7.ui.screen.landlord.room.AddRoomScreen
 import com.example.nhatro24_7.ui.screen.landlord.room.BookingRequestDetailScreen
 import com.example.nhatro24_7.ui.screen.landlord.room.BookingRequestsForLandlordScreen
-//import com.example.nhatro24_7.ui.screen.NotificationScreen
+import com.example.nhatro24_7.ui.screen.landlord.room.RoomListScreen
+import androidx.compose.runtime.getValue
+import com.example.nhatro24_7.navigation.Routes.LANDLORD_STATISTIC_ROUTE
+import com.example.nhatro24_7.ui.screen.customer.payment.QRCodeScreen
+import com.example.nhatro24_7.ui.screen.landlord.LandlordStatisticScreen
+import com.example.nhatro24_7.ui.screen.landlord.room.RoomDetailLandlord
+
 
 import com.example.nhatro24_7.viewmodel.AuthViewModel
 import com.example.nhatro24_7.viewmodel.RoomViewModel
 import com.google.firebase.auth.FirebaseAuth
 import java.net.URLDecoder
 import com.example.nhatro24_7.viewmodel.ChatViewModel
+import com.example.nhatro24_7.viewmodel.PaymentViewModel
+import java.nio.charset.StandardCharsets
 
 @Composable
 fun AppNavigation(
@@ -146,18 +158,48 @@ fun AppNavigation(
             BookingPendingScreen(navController)
         }
 
-        composable(Routes.PAYMENT_SCREEN) { backStackEntry ->
+        composable(
+            route = Routes.PAYMENT_SCREEN_WITH_ARGS,
+            arguments = listOf(
+                navArgument("bookingRequestId") { type = NavType.StringType },
+                navArgument("roomId") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
             val bookingRequestId = backStackEntry.arguments?.getString("bookingRequestId") ?: ""
             val roomId = backStackEntry.arguments?.getString("roomId") ?: ""
+
             val roomViewModel: RoomViewModel = viewModel()
+            val paymentViewModel: PaymentViewModel = viewModel()
 
             PaymentScreen(
                 navController = navController,
                 roomId = roomId,
                 bookingRequestId = bookingRequestId,
-                roomViewModel = roomViewModel
+                roomViewModel = roomViewModel,
+                paymentViewModel = paymentViewModel
             )
         }
+
+        composable(
+            route = "qr_transfer_screen/{amount}/{transferContent}",
+            arguments = listOf(
+                navArgument("amount") { type = NavType.LongType },
+                navArgument("transferContent") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val amount = backStackEntry.arguments?.getLong("amount") ?: 0L
+            val encodedTransferContent = backStackEntry.arguments?.getString("transferContent") ?: ""
+            val transferContent = URLDecoder.decode(encodedTransferContent, StandardCharsets.UTF_8.toString())
+
+            QRCodeScreen(
+                navController = navController,
+                amount = amount,
+                transferContent = transferContent, // dùng đúng tên
+                onBack = { navController.popBackStack() }
+            )
+        }
+
+
 
         composable("landlord_profile/{landlordId}") { backStackEntry ->
             val landlordId = backStackEntry.arguments?.getString("landlordId") ?: ""
@@ -214,6 +256,9 @@ fun AppNavigation(
 //                onBack = { navController.popBackStack() }
 //            )
         }
+        composable(Routes.TERMANDPOLICY) {
+            TermsAndPolicyScreen(navController = navController)
+        }
 
 
         // Landlord
@@ -246,7 +291,30 @@ fun AppNavigation(
                 navController = navController,
                 roomViewModel = roomViewModel
             )
+        }
 
+        composable(route = Routes.ROOM_LIST) {
+            val roomViewModel: RoomViewModel = hiltViewModel()
+            val roomsByLandlord by roomViewModel.roomsByLandlord.collectAsState()
+
+            LaunchedEffect(key1 = true) {
+                val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
+                if (currentUserId != null) {
+                    roomViewModel.getRoomsByLandlord(currentUserId)
+                }
+            }
+
+            RoomListScreen(
+                navController = navController,
+                roomViewModel = roomViewModel,
+                roomsByLandlord = roomsByLandlord
+            )
+        }
+
+        composable("room_detail_landlord/{roomId}") { backStackEntry ->
+            val roomId = backStackEntry.arguments?.getString("roomId")
+            val roomViewModel: RoomViewModel = hiltViewModel()
+            RoomDetailLandlord(roomId = roomId, navController = navController, roomViewModel = roomViewModel)
         }
 
         composable("payment_methods") {
@@ -287,6 +355,14 @@ fun AppNavigation(
         }
         composable(Routes.DELETE_ACCOUNT) {
             DeleteAccountScreen(navController = navController)
+        }
+
+        composable(
+            route = "$LANDLORD_STATISTIC_ROUTE/{landlordId}",
+            arguments = listOf(navArgument("landlordId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val landlordId = backStackEntry.arguments?.getString("landlordId") ?: ""
+            LandlordStatisticScreen(landlordId)
         }
 
         //chat

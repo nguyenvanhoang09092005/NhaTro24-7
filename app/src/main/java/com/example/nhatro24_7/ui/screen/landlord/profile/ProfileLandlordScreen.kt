@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
+import com.example.nhatro24_7.navigation.Routes.landlordStatisticRoute
 import com.example.nhatro24_7.ui.screen.customer.profile.SettingToggleItem
 import com.example.nhatro24_7.ui.screen.landlord.component.BottomNavBar
 import com.example.nhatro24_7.ui.screen.landlord.profile.ExpandableSection
@@ -30,6 +31,7 @@ import com.example.nhatro24_7.ui.screen.landlord.profile.ProfileOption
 import com.example.nhatro24_7.viewmodel.AuthViewModel
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
+import okhttp3.Route
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -88,7 +90,8 @@ fun ProfileLandlordScreen(
                     .background(MaterialTheme.colorScheme.primary)
                     .padding(vertical = 32.dp),
                 contentAlignment = Alignment.Center
-            ) {
+            )
+            {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     val imageToDisplay = avatarUri?.toString() ?: if (avatarUrl.isNotBlank()) avatarUrl else null
 
@@ -128,8 +131,6 @@ fun ProfileLandlordScreen(
                 ExpandableSection("Quản lý phòng trọ", Icons.Default.Home, isRoomExpanded, { isRoomExpanded = !isRoomExpanded },
                     listOf(
                         Triple("Danh sách phòng", Icons.Default.MeetingRoom, "room_list"),
-                        Triple("Thêm phòng mới", Icons.Default.AddBusiness, "add_room"),
-                        Triple("Lịch đặt phòng", Icons.Default.Event, "room_booking_schedule"),
                         Triple("Yêu cầu thuê phòng", Icons.Default.Inbox, "landlord_booking_requests"),
                         Triple("Đánh giá của khách", Icons.Default.ThumbUp, "guest_reviews")
                     ), navController)
@@ -146,17 +147,22 @@ fun ProfileLandlordScreen(
                 ExpandableSection("Quản lý thanh toán", Icons.Default.AccountBalanceWallet, isPaymentExpanded, { isPaymentExpanded = !isPaymentExpanded },
                     listOf(
                         Triple("Thêm tài khoản ngân hàng", Icons.Default.AddCard, "add_bank_account"),
-                        Triple("Danh sách tài khoản ngân hàng", Icons.Default.AccountBalance, "list_bank_accounts"),
-                        Triple("Phương thức thanh toán", Icons.Default.Payment, "payment_methods")
+                        Triple("Danh sách tài khoản ngân hàng", Icons.Default.AccountBalance, "list_bank_accounts")
                     ), navController)
+
                 com.example.nhatro24_7.ui.screen.customer.profile.ProfileOption(
-                    Icons.Default.CardGiftcard,
-                    "Ưu đãi"
-                ) { /* TODO */ }
+                    Icons.Default.Info,
+                    "Thống kê"
+                ) {
+
+//                    navController.navigate("landlord_statistic/${landlordId}")
+                }
+
+
                 com.example.nhatro24_7.ui.screen.customer.profile.ProfileOption(
                     Icons.Default.Info,
                     "Điều khoản và chính sách"
-                ) { /* TODO */ }
+                ) {        navController.navigate("termAndPolicy") }
 
                 Divider(modifier = Modifier.padding(vertical = 8.dp))
 
@@ -225,20 +231,6 @@ fun ProfileOption(
     }
 }
 
-@Composable
-fun SettingToggleItem(icon: ImageVector, title: String, checked: Boolean, onToggle: (Boolean) -> Unit) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 12.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Icon(icon, contentDescription = title, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
-        Spacer(modifier = Modifier.width(16.dp))
-        Text(title, fontSize = 16.sp, modifier = Modifier.weight(1f), color = MaterialTheme.colorScheme.onSurface)
-        Switch(checked = checked, onCheckedChange = onToggle, modifier = Modifier.scale(0.7f))
-    }
-}
 
 @Composable
 fun ExpandableSection(
@@ -265,6 +257,37 @@ fun ExpandableSection(
 }
 
 @Composable
+fun SettingToggleItem(
+    icon: ImageVector,
+    title: String,
+    checked: Boolean,
+    onToggle: (Boolean) -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            icon,
+            contentDescription = title,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(20.dp)
+        )
+        Spacer(modifier = Modifier.width(16.dp))
+        Text(
+            title,
+            fontSize = 16.sp,
+            modifier = Modifier.weight(1f),
+            color = MaterialTheme.colorScheme.onSurface
+        )
+        Switch(checked = checked, onCheckedChange = onToggle, modifier = Modifier.scale(0.7f))
+    }
+}
+
+
+@Composable
 fun SettingRoleSwitchItem(
     icon: ImageVector,
     title: String,
@@ -277,21 +300,21 @@ fun SettingRoleSwitchItem(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 12.dp)
-            .clickable { onRoleToggle() }
-          ,
+            .padding(horizontal = 16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(
             imageVector = roleIcon,
             contentDescription = "Vai trò",
-            modifier = Modifier.size(4.dp),
+            modifier = Modifier.size(20.dp),
             tint = MaterialTheme.colorScheme.primary
         )
+        Spacer(modifier = Modifier.width(16.dp))
         Text(
             text = "$title: $roleTitle",
-            style = MaterialTheme.typography.bodyLarge,
-            modifier = Modifier.weight(1f)
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.weight(1f),
+            fontSize = 16.sp
         )
         Switch(
             checked = currentRole == "landlord",
