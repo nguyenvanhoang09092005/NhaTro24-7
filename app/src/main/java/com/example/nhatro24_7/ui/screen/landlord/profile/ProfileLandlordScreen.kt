@@ -23,7 +23,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
-import com.example.nhatro24_7.ui.screen.customer.profile.SettingDropdownItem
 import com.example.nhatro24_7.ui.screen.customer.profile.SettingToggleItem
 import com.example.nhatro24_7.ui.screen.landlord.component.BottomNavBar
 import com.example.nhatro24_7.ui.screen.landlord.profile.ExpandableSection
@@ -52,6 +51,7 @@ fun ProfileLandlordScreen(
     var avatarUrl by remember { mutableStateOf("") }
     var isLanguageDropdownExpanded by remember { mutableStateOf(false) }
     var isNotificationEnabled by remember { mutableStateOf(true) }
+    val userRole by viewModel.userRole.collectAsState()
 
     LaunchedEffect(Unit) {
         val userId = viewModel.getCurrentUserId()
@@ -61,6 +61,12 @@ fun ProfileLandlordScreen(
             avatarUrl = doc.getString("avatarUrl") ?: ""
         }
     }
+
+    LaunchedEffect(Unit) {
+        viewModel.loadUserRole()
+    }
+
+
 
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         avatarUri = uri
@@ -158,19 +164,14 @@ fun ProfileLandlordScreen(
                     onThemeToggle(it)
                 }
 
-                SettingDropdownItem(
-                    icon = Icons.Default.Language,
-                    title = "Ngôn ngữ",
-                    selected = selectedLanguage,
-                    expanded = isLanguageDropdownExpanded,
-                    onExpandToggle = { isLanguageDropdownExpanded = !isLanguageDropdownExpanded },
-                    onSelect = {
-                        onLanguageChange(it)
-                        isLanguageDropdownExpanded = false
-                    },
-                    options = listOf("Tiếng Việt", "English")
+                SettingRoleSwitchItem(
+                    icon = Icons.Default.SwitchAccount,
+                    title = "Chuyển vai trò",
+                    currentRole = userRole,
+                    onRoleToggle = {
+                        viewModel.toggleUserRole() // Gọi hàm toggle vai trò trong ViewModel
+                    }
                 )
-
                 SettingToggleItem(Icons.Default.Notifications, "Nhận thông báo", isNotificationEnabled) {
                     isNotificationEnabled = it
                     // TODO: Save to DataStore if needed
@@ -240,70 +241,6 @@ fun SettingToggleItem(icon: ImageVector, title: String, checked: Boolean, onTogg
 }
 
 @Composable
-fun SettingDropdownItem(
-    icon: ImageVector,
-    title: String,
-    selected: String,
-    expanded: Boolean,
-    onExpandToggle: () -> Unit,
-    onSelect: (String) -> Unit,
-    options: List<String>
-) {
-    Column {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable { onExpandToggle() }
-                .padding(horizontal = 16.dp, vertical = 14.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = title,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(24.dp) // icon to hơn
-            )
-
-            Spacer(modifier = Modifier.width(16.dp))
-
-            Text(
-                text = title,
-                fontSize = 17.sp,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-
-            Spacer(modifier = Modifier.weight(1f))
-
-            Text(
-                text = selected,
-                fontSize = 15.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.End,
-                modifier = Modifier
-                    .widthIn(min = 100.dp)
-                    .padding(end = 4.dp)
-            )
-
-            Icon(
-                imageVector = Icons.Default.ArrowDropDown,
-                contentDescription = "Expand",
-                tint = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-
-        DropdownMenu(expanded = expanded, onDismissRequest = onExpandToggle) {
-            options.forEach { option ->
-                DropdownMenuItem(
-                    text = { Text(option) },
-                    onClick = { onSelect(option) }
-                )
-            }
-        }
-    }
-}
-
-
-@Composable
 fun ExpandableSection(
     title: String,
     icon: ImageVector,
@@ -324,5 +261,42 @@ fun ExpandableSection(
                 }
             }
         }
+    }
+}
+
+@Composable
+fun SettingRoleSwitchItem(
+    icon: ImageVector,
+    title: String,
+    currentRole: String,
+    onRoleToggle: () -> Unit
+) {
+    val roleTitle = if (currentRole == "customer") "Người thuê" else "Chủ phòng"
+    val roleIcon = if (currentRole == "customer") Icons.Default.Person else Icons.Default.Home
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 12.dp)
+            .clickable { onRoleToggle() }
+          ,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            imageVector = roleIcon,
+            contentDescription = "Vai trò",
+            modifier = Modifier.size(4.dp),
+            tint = MaterialTheme.colorScheme.primary
+        )
+        Text(
+            text = "$title: $roleTitle",
+            style = MaterialTheme.typography.bodyLarge,
+            modifier = Modifier.weight(1f)
+        )
+        Switch(
+            checked = currentRole == "landlord",
+            onCheckedChange = { onRoleToggle() },
+            modifier = Modifier.scale(0.7f)
+        )
     }
 }

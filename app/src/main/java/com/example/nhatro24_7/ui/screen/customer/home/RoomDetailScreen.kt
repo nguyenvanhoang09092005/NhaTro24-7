@@ -28,6 +28,7 @@ import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.example.nhatro24_7.data.model.Review
 import com.example.nhatro24_7.navigation.Routes
+import com.example.nhatro24_7.ui.screen.component.CommonTopBar
 import com.example.nhatro24_7.viewmodel.RoomViewModel
 import com.google.firebase.auth.FirebaseAuth
 import java.text.SimpleDateFormat
@@ -94,18 +95,9 @@ fun RoomDetailScreen(roomId: String?, navController: NavController, roomViewMode
 
     Scaffold(
         topBar = {
-            CenterAlignedTopAppBar(
-                title = {
-                    Text("Chi tiết phòng", fontSize = 18.sp, fontWeight = FontWeight.Medium)
-                },
-                navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(
-                            Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = ""
-                        )
-                    }
-                },
+            CommonTopBar(
+                title = "Chi tiết phòng",
+                onBackClick = { navController.popBackStack() },
                 actions = {
                     if (!hasRequested.value) {
                         TextButton(
@@ -484,7 +476,7 @@ fun RoomDetailScreen(roomId: String?, navController: NavController, roomViewMode
             Text("Đánh giá của người dùng", fontWeight = FontWeight.Bold, fontSize = 18.sp)
             Spacer(modifier = Modifier.height(8.dp))
             if (reviews.isEmpty()) {
-                Text("Chưa có đánh giá nào.")
+//                Text("Chưa có đánh giá nào.")
             } else {
                 reviews.forEach { review ->
                     Card(

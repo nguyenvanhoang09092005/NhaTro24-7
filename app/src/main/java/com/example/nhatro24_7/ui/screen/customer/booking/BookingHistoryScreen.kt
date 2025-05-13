@@ -1,5 +1,6 @@
 package com.example.nhatro24_7.ui.screen.customer.booking
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -90,7 +91,17 @@ fun BookingRequestCard(
     }
 
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth()
+            .clickable {
+                roomViewModel.getRoomById(request.roomId) { room ->
+                    room?.let {
+                        navController.navigate("bookingDetailHistory/${request.roomId}/${request.id}")
+
+                    }
+                }
+            }
+        ,
+
         elevation = CardDefaults.cardElevation(4.dp),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
@@ -120,34 +131,91 @@ fun BookingRequestCard(
 
 @Composable
 fun ActionSection(request: BookingRequest, navController: NavController) {
+    val roomViewModel: RoomViewModel = viewModel()
+
+    Spacer(Modifier.height(12.dp))
+
+    var showConfirmDialog by remember { mutableStateOf(false) }
+
+    if (showConfirmDialog) {
+        AlertDialog(
+            onDismissRequest = { showConfirmDialog = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    roomViewModel.cancelBooking(request.id)
+                    showConfirmDialog = false
+                }) {
+                    Text("Xác nhận")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showConfirmDialog = false }) {
+                    Text("Hủy")
+                }
+            },
+            title = { Text("Xác nhận hủy phòng?") },
+            text = { Text("Bạn có chắc muốn hủy phòng này không?") }
+        )
+    }
+
+
     when (request.status) {
-        "accepted" -> {
-            Spacer(Modifier.height(12.dp))
-            Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) {
-                Button(
-                    onClick = {
-                        navController.navigate("paymentScreen/${request.id}/${request.roomId}")
-                    },
-                    shape = RoundedCornerShape(12.dp)
+        "pending", "accepted" -> {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End
+            ) {
+                if (request.status == "accepted") {
+                    Button(
+                        onClick = {
+                            navController.navigate("paymentScreen/${request.id}/${request.roomId}")
+                        },
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text("Thanh toán ngay")
+                    }
+                }
+                Spacer(modifier = Modifier.width(8.dp))
+                OutlinedButton(
+                    onClick = { roomViewModel.cancelBooking(request.id) },
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.Red)
                 ) {
-                    Text("Thanh toán ngay")
+                    Text("Hủy phòng")
                 }
             }
-
         }
+
         "paid" -> {
-            Spacer(Modifier.height(12.dp))
-            Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
                 Text(
                     text = "Thanh toán thành công",
                     color = Color(0xFF4CAF50),
                     fontWeight = FontWeight.Medium
                 )
+                OutlinedButton(
+                    onClick = { roomViewModel.returnRoom(request.id) },
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.Blue)
+                ) {
+                    Text("Trả phòng")
+                }
             }
         }
 
+        "cancelled" -> {
+            Text("Đã hủy", color = Color.Gray, fontWeight = FontWeight.Medium)
+        }
+
+        "returned" -> {
+            Text("Đã trả phòng", color = Color.Gray, fontWeight = FontWeight.Medium)
+        }
     }
 }
+
 
 @Composable
 fun StatusChip(status: String) {
@@ -156,6 +224,8 @@ fun StatusChip(status: String) {
         "accepted" -> Color(0xFF4CAF50) to "Chấp nhận"
         "rejected" -> Color(0xFFF44336) to "Từ chối"
         "paid" -> Color(0xFF2196F3) to "Đã thanh toán"
+        "cancelled" -> Color.Gray to "Đã hủy"
+        "returned" -> Color(0xFF607D8B) to "Đã trả phòng"
         else -> Color.Gray to "Không rõ"
     }
 

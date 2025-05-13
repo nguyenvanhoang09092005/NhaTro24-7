@@ -48,7 +48,7 @@ fun ProfileScreen(
     var isNotificationEnabled by remember { mutableStateOf(true) }
     var username by remember { mutableStateOf("Người dùng") }
     var avatarUrl by remember { mutableStateOf("") }
-
+    val userRole by viewModel.userRole.collectAsState()
 
     LaunchedEffect(Unit) {
         val userId = viewModel.getCurrentUserId()
@@ -57,6 +57,10 @@ fun ProfileScreen(
             username = doc.getString("username") ?: "Người dùng"
             avatarUrl = doc.getString("avatarUrl") ?: ""
         }
+    }
+
+    LaunchedEffect(Unit) {
+        viewModel.loadUserRole()
     }
 
 
@@ -151,7 +155,6 @@ fun ProfileScreen(
                     onToggle = { isActivityExpanded = !isActivityExpanded },
                     items = listOf(
                         Triple("Lịch sử đã xem", Icons.Default.History,Routes.CUSTOMER_HISTORY),
-                        Triple("Lịch sử yêu thích", Icons.Default.Favorite, "liked_history"),
                         Triple("Lịch sử đặt phòng", Icons.Default.Hotel, "customer_booking_history"),
                         Triple("Lịch sử hủy phòng", Icons.Default.Cancel, "cancel_history"),
                         Triple("Đánh giá đã gửi", Icons.Default.RateReview, "review_history")
@@ -183,20 +186,18 @@ fun ProfileScreen(
                     onThemeToggle(it)
                 }
 
-                SettingDropdownItem(
-                    icon = Icons.Default.Language,
-                    title = "Ngôn ngữ",
-                    selected = selectedLanguage,
-                    expanded = isLanguageDropdownExpanded,
-                    onExpandToggle = { isLanguageDropdownExpanded = !isLanguageDropdownExpanded },
-                    onSelect = {
-                        onLanguageChange(it)
-                        isLanguageDropdownExpanded = false
-                    },
-                    options = listOf("Tiếng Việt", "English")
-                )
 
-                SettingToggleItem(Icons.Default.Notifications, "Nhận thông báo", isNotificationEnabled) {
+                    SettingRoleSwitchItem(
+                        icon = Icons.Default.SwitchAccount,
+                        title = "Chuyển vai trò",
+                        currentRole = userRole,
+                        onRoleToggle = {
+                            viewModel.toggleUserRole() // Gọi hàm toggle vai trò trong ViewModel
+                        }
+                    )
+
+
+                    SettingToggleItem(Icons.Default.Notifications, "Nhận thông báo", isNotificationEnabled) {
                     isNotificationEnabled = it
                     // TODO: Save to DataStore if needed
                 }
@@ -347,3 +348,39 @@ fun ExpandableSection(
     }
 }
 
+@Composable
+fun SettingRoleSwitchItem(
+    icon: ImageVector,
+    title: String,
+    currentRole: String,
+    onRoleToggle: () -> Unit
+) {
+    val roleTitle = if (currentRole == "customer") "Người thuê" else "Chủ phòng"
+    val roleIcon = if (currentRole == "customer") Icons.Default.Person else Icons.Default.Home
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp)
+            .clickable { onRoleToggle() }
+            .height(56.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            imageVector = roleIcon,
+            contentDescription = "Vai trò",
+            modifier = Modifier.size(24.dp),
+            tint = MaterialTheme.colorScheme.primary
+        )
+        Spacer(modifier = Modifier.width(16.dp))
+        Text(
+            text = "$title: $roleTitle",
+            style = MaterialTheme.typography.bodyLarge,
+            modifier = Modifier.weight(1f)
+        )
+        Switch(
+            checked = currentRole == "landlord",
+            onCheckedChange = { onRoleToggle() }
+        )
+    }
+}

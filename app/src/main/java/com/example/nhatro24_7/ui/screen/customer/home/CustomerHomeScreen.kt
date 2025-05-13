@@ -365,8 +365,8 @@ fun FilterSection(
 fun EnhancedTopAppBar(title: String) {
     val gradient = Brush.horizontalGradient(
         colors = listOf(
-            MaterialTheme.colorScheme.primary,
-            MaterialTheme.colorScheme.secondary
+            Color(0xFF4FC3F7),
+            Color(0xFF2689F1)
         )
     )
 
@@ -406,6 +406,9 @@ fun EnhancedFilterSection(
     selectedOption: String,
     onOptionSelected: (String) -> Unit
 ) {
+
+
+
     val iconsMap = mapOf(
         "Tất cả" to Icons.Default.List,
         "Cho thuê" to Icons.Default.Home,

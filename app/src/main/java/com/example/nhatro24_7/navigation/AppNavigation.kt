@@ -53,6 +53,7 @@ fun AppNavigation(
     navController: NavHostController,
     authViewModel: AuthViewModel,
     chatViewModel: ChatViewModel,
+    romViewModel: RoomViewModel,
     isDarkTheme: Boolean,
     selectedLanguage: String,
     onToggleTheme: (Boolean) -> Unit,
@@ -119,6 +120,22 @@ fun AppNavigation(
             val roomId = backStackEntry.arguments?.getString("roomId")
             RoomDetailScreen(roomId, navController, RoomViewModel())
         }
+
+//        composable(
+//            route = "bookingDetailHistory/{roomId}/{bookingId}",
+//            arguments = listOf(
+//                navArgument("roomId") { type = NavType.StringType },
+//                navArgument("bookingId") { type = NavType.StringType }
+//            )
+//        ) { backStackEntry ->
+//            val roomId = backStackEntry.arguments?.getString("roomId") ?: ""
+//            val bookingId = backStackEntry.arguments?.getString("bookingId") ?: ""
+//            BookingDetailHistoryScreen(
+//                navController = navController,
+//                roomId = roomId,
+//                bookingId = bookingId
+//            )
+//        }
 
         composable(Routes.CUSTOMER_SAVED) {
             SavedRoomScreen(navController, authViewModel, RoomViewModel())
@@ -305,7 +322,8 @@ fun AppNavigation(
                 chatId = chatId,
                 receiverId = receiverId,
                 receiverName = receiverName,
-                receiverAvatarUrl = receiverAvatarUrl
+                receiverAvatarUrl = receiverAvatarUrl,
+                navController = navController,
             )
         }
 
@@ -330,7 +348,8 @@ fun AppNavigation(
                 chatId = chatId,
                 receiverId = receiverId,
                 receiverName = receiverName,
-                receiverAvatarUrl = receiverAvatarUrl
+                receiverAvatarUrl = receiverAvatarUrl,
+                navController = navController,
             )
         }
 

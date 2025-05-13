@@ -5,6 +5,8 @@ import android.util.Log
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.nhatro24_7.data.model.ActivityLog
@@ -407,6 +409,7 @@ class RoomViewModel : ViewModel() {
             .addOnFailureListener {
                 Log.e("RoomViewModel", "Lỗi khi lấy danh sách người dùng", it)
             }
+
     }
 
 // ghi lịch sử xem
@@ -421,6 +424,61 @@ class RoomViewModel : ViewModel() {
 //        .document(log.id)
 //        .set(log)
 //}
+
+
+    // hủy/ trả phòng
+    private val _cancelSuccess = MutableLiveData<Boolean>()
+    val cancelSuccess: LiveData<Boolean> = _cancelSuccess
+
+    private val _checkoutSuccess = MutableLiveData<Boolean>()
+    val checkoutSuccess: LiveData<Boolean> = _checkoutSuccess
+
+
+    fun cancelBooking(bookingId: String) {
+        val bookingRef = db.collection("bookings").document(bookingId)
+        bookingRef.update("status", "cancelled")
+            .addOnSuccessListener {
+                _cancelSuccess.value = true
+            }
+            .addOnFailureListener {
+                _cancelSuccess.value = false
+            }
+    }
+
+    fun checkoutBooking(bookingId: String) {
+        val bookingRef = db.collection("bookings").document(bookingId)
+        bookingRef.update("status", "checked_out")
+            .addOnSuccessListener {
+                _checkoutSuccess.value = true
+            }
+            .addOnFailureListener {
+                _checkoutSuccess.value = false
+            }
+    }
+
+    fun returnRoom(bookingId: String) {
+        val bookingRef = Firebase.firestore.collection("bookingRequests").document(bookingId)
+        bookingRef.update("status", "returned")
+    }
+
+
+    fun getBookingRequestById(bookingId: String, onResult: (BookingRequest?) -> Unit) {
+        val bookingRef = db.collection("bookingRequests").document(bookingId)
+        bookingRef.get()
+            .addOnSuccessListener { document ->
+                if (document.exists()) {
+                    val booking = document.toObject(BookingRequest::class.java)
+                    onResult(booking)
+                } else {
+                    onResult(null)
+                }
+            }
+            .addOnFailureListener {
+                onResult(null)
+            }
+    }
+
+
 
 }
 

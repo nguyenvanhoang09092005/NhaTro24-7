@@ -66,6 +66,7 @@ dependencies {
 
     implementation("androidx.navigation:navigation-compose:2.7.5")
     implementation("androidx.compose.material3:material3:1.1.2")
+    implementation("com.google.android.gms:play-services-location:21.0.1")
     // Firebase BoM
     implementation(platform("com.google.firebase:firebase-bom:32.7.4"))
     implementation("com.google.firebase:firebase-auth-ktx")

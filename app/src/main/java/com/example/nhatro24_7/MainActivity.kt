@@ -25,6 +25,7 @@ import android.content.pm.PackageManager
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import com.example.nhatro24_7.viewmodel.ChatViewModel
+import com.example.nhatro24_7.viewmodel.RoomViewModel
 
 
 @AndroidEntryPoint
@@ -43,6 +44,7 @@ class MainActivity : ComponentActivity() {
             val navController = rememberNavController()
             val authViewModel: AuthViewModel = hiltViewModel()
             val chatViewModel: ChatViewModel = hiltViewModel()
+            val roomViewModel: RoomViewModel = hiltViewModel()
 //            val notificationViewModel: NotificationViewModel = hiltViewModel()
 
             // Áp dụng theme
@@ -54,6 +56,7 @@ class MainActivity : ComponentActivity() {
                     AppNavigation(
                         navController = navController,
                         chatViewModel = chatViewModel,
+                        romViewModel = roomViewModel,
                         authViewModel = authViewModel,
                         isDarkTheme = isDarkMode,
                         selectedLanguage = selectedLanguage,

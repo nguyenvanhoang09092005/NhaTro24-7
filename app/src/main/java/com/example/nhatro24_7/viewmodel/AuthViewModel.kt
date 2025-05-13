@@ -14,6 +14,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 
 @HiltViewModel
@@ -98,6 +99,60 @@ class AuthViewModel @Inject constructor(
             }
         }
     }
+
+    private val _userRole = MutableStateFlow("customer")
+    val userRole: StateFlow<String> = _userRole
+
+    fun fetchUserRole(userId: String) {
+        FirebaseFirestore.getInstance()
+            .collection("users")
+            .document(userId)
+            .get()
+            .addOnSuccessListener { document ->
+                val role = document.getString("role") ?: "customer"
+                _userRole.value = role
+            }
+            .addOnFailureListener {
+                _userRole.value = "customer"
+            }
+    }
+
+    fun loadUserRole() {
+        val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return
+        FirebaseFirestore.getInstance()
+            .collection("users")
+            .document(userId)
+            .get()
+            .addOnSuccessListener { document ->
+                val role = document.getString("role") ?: "customer"
+                _userRole.value = role
+            }
+            .addOnFailureListener {
+                _userRole.value = "customer"
+            }
+    }
+
+    fun toggleUserRole() {
+        val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return
+        val userRef = FirebaseFirestore.getInstance().collection("users").document(userId)
+
+        userRef.get().addOnSuccessListener { document ->
+            val currentRole = document.getString("role") ?: "customer"
+            val newRole = if (currentRole == "customer") "landlord" else "customer"
+
+            userRef.update("role", newRole)
+                .addOnSuccessListener {
+                    _userRole.value = newRole
+                    println("✅ Đã chuyển vai trò thành công: $newRole")
+                }
+                .addOnFailureListener {
+                    println("❌ Không thể cập nhật vai trò: ${it.message}")
+                }
+        }.addOnFailureListener {
+            println("❌ Không thể lấy thông tin vai trò hiện tại: ${it.message}")
+        }
+    }
+
 
     fun updateLandlordInfo(user: User, onResult: (Boolean) -> Unit) {
         val userId = FirebaseAuth.getInstance().currentUser?.uid
