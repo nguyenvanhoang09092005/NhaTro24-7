@@ -31,7 +31,10 @@ import java.util.*
 import androidx.compose.material.icons.filled.*
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.platform.LocalContext
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.nhatro24_7.navigation.Routes
+import com.example.nhatro24_7.viewmodel.NotificationViewModel
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -40,6 +43,7 @@ fun BookingHistoryScreen(
     navController: NavController,
     roomViewModel: RoomViewModel = viewModel()
 ) {
+
     val userId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
     val bookingRequests by roomViewModel.getBookingRequestsFlow(userId).collectAsState(initial = emptyList())
 
@@ -177,15 +181,19 @@ fun BookingRequestCard(
                     color = Color.Gray
                 )
 
-                ActionSection(request, navController)
+                ActionSection(request, navController, roomTitle)
+
             }
         }
     }
 }
 
 @Composable
-fun ActionSection(request: BookingRequest, navController: NavController) {
+fun ActionSection(request: BookingRequest, navController: NavController, roomTitle: String) {
+
     val roomViewModel: RoomViewModel = viewModel()
+    val context = LocalContext.current
+    val notificationViewModel: NotificationViewModel = hiltViewModel()
 
     val returnSuccessMap by roomViewModel.returnSuccessMap.collectAsState()
     val cancelSuccessMap by roomViewModel.cancelSuccessMap.collectAsState()
@@ -256,12 +264,20 @@ fun ActionSection(request: BookingRequest, navController: NavController) {
                 }
                 Spacer(modifier = Modifier.width(8.dp))
                 OutlinedButton(
-                    onClick = { roomViewModel.cancelBooking(request.id, request.roomId) },
+                    onClick = {
+                        roomViewModel.cancelBooking(request.id, request.roomId)
+                        notificationViewModel.showNotification(
+                            context = context,
+                            title = "Huỷ đặt phòng",
+                            message = "Bạn đã huỷ phòng $roomTitle thành công."
+                        )
+                    },
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.Red)
                 ) {
                     Text("Hủy phòng")
                 }
+
             }
         }
 
@@ -278,12 +294,18 @@ fun ActionSection(request: BookingRequest, navController: NavController) {
                 OutlinedButton(
                     onClick = {
                         roomViewModel.returnRoom(request.id, request.roomId)
+                        notificationViewModel.showNotification(
+                            context = context,
+                            title = "Trả phòng thành công",
+                            message = "Cảm ơn bạn đã sử dụng dịch vụ phòng $roomTitle."
+                        )
                     },
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.Blue)
                 ) {
                     Text("Trả phòng")
                 }
+
             }
         }
 

@@ -51,6 +51,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.location.LocationManagerCompat.getCurrentLocation
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
@@ -58,6 +59,7 @@ import com.cloudinary.Cloudinary
 import com.cloudinary.utils.ObjectUtils
 import com.example.nhatro24_7.data.model.Message
 import com.example.nhatro24_7.viewmodel.ChatViewModel
+import com.example.nhatro24_7.viewmodel.NotificationViewModel
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -104,9 +106,12 @@ fun ChatScreen(
         showAttachmentOptions = false
     }
 
+    val notificationViewModel: NotificationViewModel = hiltViewModel()
+
     LaunchedEffect(imageUri) {
         imageUri?.let { uri ->
             val imageUrl = uploadFileToCloudinary(context, uri)
+
             viewModel.sendMessage(
                 chatId = chatId,
                 message = Message(
@@ -116,6 +121,13 @@ fun ChatScreen(
                     timestamp = System.currentTimeMillis()
                 )
             )
+
+            notificationViewModel.showNotification(
+                context = context,
+                title = "Tin nhắn mới từ bạn",
+                message = "📷 Bạn đã gửi một hình ảnh."
+            )
+
             imageUri = null
         }
     }
@@ -133,6 +145,12 @@ fun ChatScreen(
                     timestamp = System.currentTimeMillis()
                 )
             )
+            notificationViewModel.showNotification(
+                context = context,
+                title = "Tin nhắn mới từ bạn",
+                message = "📎 Bạn đã gửi một tệp tin."
+            )
+
             fileUri = null
         }
     }
@@ -584,6 +602,14 @@ fun ChatScreen(
                                             timestamp = System.currentTimeMillis()
                                         )
                                     )
+
+                                    // Gửi thông báo cho người nhận
+                                    notificationViewModel.showNotification(
+                                        context = context,
+                                        title = "Tin nhắn mới từ bạn",
+                                        message = messageText
+                                    )
+
                                     messageText = ""
                                 }
                             },

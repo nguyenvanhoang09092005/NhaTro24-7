@@ -23,8 +23,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.nhatro24_7.data.model.BookingRequest
+import com.example.nhatro24_7.viewmodel.NotificationViewModel
 import com.example.nhatro24_7.viewmodel.RoomViewModel
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
@@ -37,6 +39,8 @@ fun BookingRequestsForLandlordScreen(
     navController: NavController,
     roomViewModel: RoomViewModel
 ) {
+    val notificationViewModel: NotificationViewModel = hiltViewModel()
+
     val context = LocalContext.current
     val landlordId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
 
@@ -192,6 +196,11 @@ fun BookingRequestsForLandlordScreen(
                                                     if (success) {
                                                         roomViewModel.markRoomAsUnavailable(request.roomId)
                                                         Toast.makeText(context, "Đã chấp nhận", Toast.LENGTH_SHORT).show()
+                                                        notificationViewModel.showNotification(
+                                                            context,
+                                                            title = "Yêu cầu đặt phòng",
+                                                            message = "Bạn đã chấp nhận yêu cầu của $userName cho phòng $roomTitle"
+                                                        )
                                                         refreshRequests()
                                                     } else {
                                                         Toast.makeText(context, "Lỗi khi cập nhật!", Toast.LENGTH_SHORT).show()
@@ -208,6 +217,11 @@ fun BookingRequestsForLandlordScreen(
                                                 roomViewModel.updateBookingStatus(request.id, "rejected") { success ->
                                                     if (success) {
                                                         Toast.makeText(context, "Đã từ chối", Toast.LENGTH_SHORT).show()
+                                                        notificationViewModel.showNotification(
+                                                            context,
+                                                            title = "Yêu cầu bị từ chối",
+                                                            message = "Bạn đã từ chối yêu cầu đặt phòng của $userName"
+                                                        )
                                                         refreshRequests()
                                                     } else {
                                                         Toast.makeText(context, "Lỗi khi cập nhật!", Toast.LENGTH_SHORT).show()
@@ -218,6 +232,7 @@ fun BookingRequestsForLandlordScreen(
                                         ) {
                                             Text("Từ chối")
                                         }
+
                                     }
                                 }
                             }
@@ -243,6 +258,7 @@ fun EnhancedFilterSection(
         "accepted" to Icons.Default.CheckCircle,
         "rejected" to Icons.Default.Cancel
     )
+
 
     Column(modifier = Modifier.padding(16.dp)) {
         Text(

@@ -122,8 +122,15 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+    // Vico - thư viện vẽ biểu đồ cho Jetpack Compose
+    implementation("com.patrykandpatrick.vico:compose:1.13.0")
+    implementation("com.patrykandpatrick.vico:compose-m3:1.13.0")
+    implementation("com.patrykandpatrick.vico:core:1.13.0")
 
     implementation("com.cloudinary:cloudinary-android:2.3.1")
+
+    //thông báo
+    implementation("androidx.work:work-runtime-ktx:2.9.0")
 
     // Xử lý lỗi Duplicate class - Exclude firebase-common nếu cần
     implementation("com.google.firebase:firebase-firestore-ktx") {

@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
+import com.example.nhatro24_7.navigation.Routes
 import com.example.nhatro24_7.navigation.Routes.landlordStatisticRoute
 import com.example.nhatro24_7.ui.screen.customer.profile.SettingToggleItem
 import com.example.nhatro24_7.ui.screen.landlord.component.BottomNavBar
@@ -151,11 +152,12 @@ fun ProfileLandlordScreen(
                     ), navController)
 
                 com.example.nhatro24_7.ui.screen.customer.profile.ProfileOption(
-                    Icons.Default.Info,
-                    "Thống kê"
+                    icon = Icons.Default.Info,
+                    title = "Thống kê"
                 ) {
-
-//                    navController.navigate("landlord_statistic/${landlordId}")
+                    viewModel.getCurrentUserId()?.let { landlordId ->
+                        navController.navigate("${Routes.LANDLORD_STATISTIC_ROUTE}/$landlordId")
+                    }
                 }
 
 

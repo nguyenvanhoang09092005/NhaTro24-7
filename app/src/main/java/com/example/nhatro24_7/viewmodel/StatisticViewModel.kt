@@ -1,5 +1,6 @@
 package com.example.nhatro24_7.viewmodel
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.nhatro24_7.data.model.Statistic
@@ -12,12 +13,23 @@ class StatisticViewModel(
     private val repository: StatisticRepository = StatisticRepository()
 ) : ViewModel() {
 
-    private val _statistic = MutableStateFlow<Statistic?>(null)
-    val statistic: StateFlow<Statistic?> = _statistic
+    private val _statistic = MutableStateFlow(Statistic())
+    val statistic: StateFlow<Statistic> = _statistic
+
+    private val _isLoading = MutableStateFlow(false)
+    val isLoading: StateFlow<Boolean> = _isLoading
 
     fun fetchStatistic(landlordId: String) {
+        _isLoading.value = true
         viewModelScope.launch {
-            _statistic.value = repository.getStatisticByLandlord(landlordId)
+            try {
+                val result = repository.getStatisticByLandlord(landlordId)
+                _statistic.value = result
+            } catch (e: Exception) {
+                Log.e("StatisticViewModel", "Lỗi: ${e.message}", e)
+            } finally {
+                _isLoading.value = false
+            }
         }
     }
 }

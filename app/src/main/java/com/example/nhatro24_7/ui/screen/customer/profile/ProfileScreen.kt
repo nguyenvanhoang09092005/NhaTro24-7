@@ -177,8 +177,9 @@ fun ProfileScreen(
                 )
 
 
-                ProfileOption(Icons.Default.CardGiftcard, "Ưu đãi") { /* TODO */ }
-                ProfileOption(Icons.Default.Info, "Điều khoản và chính sách") { /* TODO */ }
+                ProfileOption(Icons.Default.CardGiftcard, "Thông báo") { /* TODO */ }
+                ProfileOption(Icons.Default.Info, "Điều khoản và chính sách") { navController.navigate("termAndPolicy") }
+
 
                 Divider(modifier = Modifier.padding(vertical = 8.dp))
 
