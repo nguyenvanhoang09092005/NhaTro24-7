@@ -22,7 +22,11 @@ import kotlinx.coroutines.launch
 import androidx.hilt.navigation.compose.hiltViewModel
 import android.Manifest
 import android.content.pm.PackageManager
+import android.os.Build
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.runtime.LaunchedEffect
 import androidx.core.content.ContextCompat
 import com.example.nhatro24_7.viewmodel.ChatViewModel
 import com.example.nhatro24_7.viewmodel.RoomViewModel
@@ -46,6 +50,23 @@ class MainActivity : ComponentActivity() {
             val chatViewModel: ChatViewModel = hiltViewModel()
             val roomViewModel: RoomViewModel = hiltViewModel()
 //            val notificationViewModel: NotificationViewModel = hiltViewModel()
+
+            //Yêu cầu quyền
+            val requestPermissionLauncher =
+                rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
+                    if (!isGranted) {
+                        Toast.makeText(context, "Không có quyền thông báo!", Toast.LENGTH_SHORT).show()
+                    }
+                }
+
+            LaunchedEffect(Unit) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                    ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+                ) {
+                    requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                }
+            }
+
 
             // Áp dụng theme
             NhaTro24_7Theme(darkTheme = isDarkMode) {

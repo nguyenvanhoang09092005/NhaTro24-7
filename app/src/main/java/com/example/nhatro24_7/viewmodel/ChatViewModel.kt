@@ -28,11 +28,29 @@ class ChatViewModel @Inject constructor(
     private val _messages = MutableLiveData<List<Message>>(emptyList())
     val messages: LiveData<List<Message>> get() = _messages
 
-    fun loadMessages(chatId: String) {
-        chatRepository.getMessages(chatId).observeForever {
-            _messages.value = it
+    fun loadMessages(
+        chatId: String,
+        currentUserId: String,
+        onNewIncomingMessage: (Message) -> Unit
+    ) {
+        chatRepository.getMessages(chatId).observeForever { messageList ->
+            val previousLast = _messages.value?.lastOrNull()
+            val newLast = messageList.lastOrNull()
+
+            // Nếu là tin mới và không phải của chính mình
+            if (
+                newLast != null &&
+                newLast.senderId != currentUserId &&
+                newLast != previousLast
+            ) {
+                onNewIncomingMessage(newLast)
+            }
+
+            _messages.value = messageList
         }
     }
+
+
 
     fun sendMessage(chatId: String, message: Message) {
         chatRepository.sendMessage(chatId, message)

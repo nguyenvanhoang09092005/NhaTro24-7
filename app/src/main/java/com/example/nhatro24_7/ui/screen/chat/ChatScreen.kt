@@ -122,11 +122,11 @@ fun ChatScreen(
                 )
             )
 
-            notificationViewModel.showNotification(
-                context = context,
-                title = "Tin nhắn mới từ bạn",
-                message = "📷 Bạn đã gửi một hình ảnh."
-            )
+//            notificationViewModel.showNotification(
+//                context = context,
+//                title = "Tin nhắn mới từ bạn",
+//                message = "📷 Bạn đã gửi một hình ảnh."
+//            )
 
             imageUri = null
         }
@@ -145,11 +145,9 @@ fun ChatScreen(
                     timestamp = System.currentTimeMillis()
                 )
             )
-            notificationViewModel.showNotification(
-                context = context,
-                title = "Tin nhắn mới từ bạn",
-                message = "📎 Bạn đã gửi một tệp tin."
-            )
+//
+
+
 
             fileUri = null
         }
@@ -604,11 +602,11 @@ fun ChatScreen(
                                     )
 
                                     // Gửi thông báo cho người nhận
-                                    notificationViewModel.showNotification(
-                                        context = context,
-                                        title = "Tin nhắn mới từ bạn",
-                                        message = messageText
-                                    )
+//                                    notificationViewModel.showNotification(
+//                                        context = context,
+//                                        title = "Tin nhắn mới từ bạn",
+//                                        message = messageText
+//                                    )
 
                                     messageText = ""
                                 }
@@ -678,8 +676,19 @@ fun ChatScreen(
     }
 
     LaunchedEffect(chatId) {
-        viewModel.loadMessages(chatId)
+        viewModel.loadMessages(
+            chatId = chatId,
+            currentUserId = currentUserId,
+            onNewIncomingMessage = { incomingMessage ->
+                notificationViewModel.showNotification(
+                    context = context,
+                    title = "Tin nhắn từ $receiverName",
+                    message = incomingMessage.content ?: "📷 Hình ảnh / 📎 Tệp tin"
+                )
+            }
+        )
     }
+
 }
 
 @Composable
