@@ -201,7 +201,10 @@ fun RoomDetailScreen(roomId: String?, navController: NavController, roomViewMode
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    InfoChip(Icons.Default.AttachMoney, "${room.price.toInt()} VNĐ/tháng")
+                    InfoChip(
+                        icon = Icons.Default.AttachMoney,
+                        info = "${String.format("%,d", room.price.toInt())} VNĐ/tháng"
+                    )
                     InfoChip(Icons.Default.SquareFoot, "${room.area} m²")
                 }
 

@@ -10,6 +10,9 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountBalance
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -18,6 +21,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
@@ -48,7 +53,7 @@ fun AddBankAccountScreen(navController: NavController, viewModel: AuthViewModel)
         Bank("VIB", R.drawable.vib),
         Bank("VietCapital Bank", R.drawable.vietcapital),
         Bank("Saigonbank", R.drawable.saigonbank),
-        Bank("Vietinbank", R.drawable.vietinbank),
+        Bank("Viẹtinbank", R.drawable.vietinbank),
         Bank("HDBank", R.drawable.hdbank),
         Bank("SeABank", R.drawable.seabank),
         Bank("ABBANK", R.drawable.abbank),
@@ -65,56 +70,58 @@ fun AddBankAccountScreen(navController: NavController, viewModel: AuthViewModel)
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp)
+            .padding(WindowInsets.systemBars.asPaddingValues())
+            .padding(horizontal = 16.dp, vertical = 12.dp)
     ) {
+        // Tiêu đề
         Text(
             text = "Thêm tài khoản ngân hàng",
-            style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.Bold
+            style = MaterialTheme.typography.headlineSmall,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(vertical = 12.dp)
         )
-        Spacer(modifier = Modifier.height(20.dp))
+
+        Spacer(modifier = Modifier.height(16.dp))
 
         // Chủ tài khoản
         OutlinedTextField(
             value = accountHolder,
             onValueChange = { accountHolder = it },
             label = { Text("Chủ tài khoản") },
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(12.dp)),
-            colors = TextFieldDefaults.outlinedTextFieldColors(
-                focusedBorderColor = MaterialTheme.colorScheme.primary,
-                unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
-            )
+            placeholder = { Text("Nhập tên chủ tài khoản") },
+            leadingIcon = { Icon(Icons.Default.Person, contentDescription = null) },
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(16.dp),
+            colors = TextFieldDefaults.outlinedTextFieldColors()
         )
-        Spacer(modifier = Modifier.height(12.dp))
+
+        Spacer(modifier = Modifier.height(16.dp))
 
         // Số tài khoản
         OutlinedTextField(
             value = accountNumber,
             onValueChange = { accountNumber = it },
             label = { Text("Số tài khoản") },
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(12.dp)),
-            colors = TextFieldDefaults.outlinedTextFieldColors(
-                focusedBorderColor = MaterialTheme.colorScheme.primary,
-                unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
-            )
+            placeholder = { Text("Nhập số tài khoản") },
+            leadingIcon = { Icon(Icons.Default.AccountBalance, contentDescription = null) },
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(16.dp),
+            colors = TextFieldDefaults.outlinedTextFieldColors()
         )
+
         Spacer(modifier = Modifier.height(20.dp))
 
-        // Chọn ngân hàng
         Text("Chọn ngân hàng", fontWeight = FontWeight.Medium, fontSize = 16.sp)
         Spacer(modifier = Modifier.height(8.dp))
 
+        // Grid ngân hàng
         LazyVerticalGrid(
             columns = GridCells.Fixed(5),
             verticalArrangement = Arrangement.spacedBy(6.dp),
             horizontalArrangement = Arrangement.spacedBy(6.dp),
             modifier = Modifier
                 .fillMaxWidth()
-                .heightIn(max = 170.dp)
+                .heightIn(max = 180.dp)
         ) {
             items(banks) { bank ->
                 val isSelected = selectedBank == bank
@@ -140,69 +147,65 @@ fun AddBankAccountScreen(navController: NavController, viewModel: AuthViewModel)
                     Image(
                         painter = painterResource(id = bank.logoRes),
                         contentDescription = bank.name,
-                        modifier = Modifier
-                            .size(36.dp)
-                            .padding(bottom = 4.dp)
+                        modifier = Modifier.size(36.dp)
                     )
                     Text(
                         text = bank.name,
                         fontSize = 10.sp,
-                        color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                        textAlign = TextAlign.Center,
+                        overflow = TextOverflow.Ellipsis,
                         maxLines = 2
                     )
                 }
             }
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.weight(1f)) // Đẩy nút xuống
 
-        // Loading + Lỗi
-        if (isLoading) {
-            CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
-        }
-
+        // Thông báo lỗi nếu có
         if (errorMessage.isNotEmpty()) {
             Text(
-                errorMessage,
+                text = errorMessage,
                 color = MaterialTheme.colorScheme.error,
-                style = MaterialTheme.typography.bodyMedium
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.padding(top = 8.dp)
             )
-            Spacer(modifier = Modifier.height(8.dp))
         }
 
         // Nút lưu
-        Button(
-            onClick = {
-                if (accountNumber.isEmpty() || selectedBank == null || accountHolder.isEmpty()) {
-                    errorMessage = "Vui lòng điền đầy đủ thông tin."
-                    return@Button
-                }
-
-                isLoading = true
-                errorMessage = ""
-
-                viewModel.addBankAccount(
-                    accountNumber,
-                    selectedBank!!.name,
-                    accountHolder
-                ) { success ->
-                    isLoading = false
-                    if (success) {
-                        navController.popBackStack()
-                    } else {
-                        errorMessage = "Lỗi khi lưu tài khoản. Vui lòng thử lại."
+        if (isLoading) {
+            CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
+        } else {
+            Button(
+                onClick = {
+                    if (accountNumber.isEmpty() || selectedBank == null || accountHolder.isEmpty()) {
+                        errorMessage = "Vui lòng điền đầy đủ thông tin."
+                        return@Button
                     }
-                }
-            },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(50.dp),
-            shape = RoundedCornerShape(12.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.primary
-            )
-        ) {
-            Text("Lưu tài khoản", fontSize = 16.sp)
+
+                    isLoading = true
+                    errorMessage = ""
+
+                    viewModel.addBankAccount(
+                        accountNumber,
+                        selectedBank!!.name,
+                        accountHolder
+                    ) { success ->
+                        isLoading = false
+                        if (success) navController.popBackStack()
+                        else errorMessage = "Lỗi khi lưu tài khoản. Vui lòng thử lại."
+                    }
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(50.dp),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Text("Lưu tài khoản", fontSize = 16.sp)
+            }
         }
     }
+
 }
+
+

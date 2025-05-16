@@ -9,8 +9,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Apartment
-import androidx.compose.material.icons.filled.Bookmark
-import androidx.compose.material.icons.filled.BookmarkBorder
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Place
 import androidx.compose.material.icons.filled.SquareFoot
@@ -38,15 +36,24 @@ import com.google.firebase.auth.FirebaseAuth
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
-import com.example.nhatro24_7.data.model.SavedRoom
-import com.example.nhatro24_7.ui.screen.customer.home.components.RoomItem
-import com.patrykandpatrick.vico.compose.chart.Chart
-import com.patrykandpatrick.vico.compose.chart.column.columnChart
-import com.patrykandpatrick.vico.core.chart.column.ColumnChart
-import com.patrykandpatrick.vico.core.entry.ChartEntry
-import com.patrykandpatrick.vico.core.entry.entryModelOf
-import kotlinx.coroutines.launch
+import android.view.ViewGroup
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.viewinterop.AndroidView
+import com.github.mikephil.charting.charts.BarChart
+import com.github.mikephil.charting.charts.LineChart
+import com.github.mikephil.charting.data.BarData
+import com.github.mikephil.charting.data.BarDataSet
+import com.github.mikephil.charting.data.BarEntry
+import com.github.mikephil.charting.data.LineData
+import com.github.mikephil.charting.data.LineDataSet
 import java.text.SimpleDateFormat
+
 import java.util.Date
 import java.util.Locale
 
@@ -191,37 +198,50 @@ fun LandlordScreen(
 
 @Composable
 fun StatisticSection(statistic: Statistic) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp)
-    ) {
-        Text("Thống kê tổng quan", fontSize = 20.sp, fontWeight = FontWeight.Bold)
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        // Dữ liệu biểu đồ cột
-        val barData = listOf(
-            "Đặt" to statistic.totalBookings,
-            "Hủy" to statistic.totalCancellations,
-            "Trả" to statistic.totalCheckouts,
-            "Đã TT" to statistic.paidRoomCount,
+    Column(modifier = Modifier.padding(16.dp)) {
+        Text(
+            text = "Thống kê tổng quan",
+            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+            modifier = Modifier.padding(bottom = 12.dp)
         )
 
-        BarChartView(data = barData)
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        Text("📊 Doanh thu: ${statistic.revenue} VNĐ", fontSize = 16.sp)
-        Text("👁 Tổng lượt xem: ${statistic.totalViews}")
-        Text("⭐ Đánh giá trung bình: ${"%.1f".format(statistic.averageRating)}")
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceEvenly
+        ) {
+            StatisticCard(title = "Đặt phòng", value = "${statistic.totalBookings}")
+            StatisticCard(title = "Huỷ", value = "${statistic.totalCancellations}")
+            StatisticCard(title = "Trả phòng", value = "${statistic.totalCheckouts}")
+        }
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        Text("🔝 Top 5 phòng được xem nhiều nhất:", fontWeight = FontWeight.SemiBold)
-        statistic.topViewedRooms.forEachIndexed { index, (roomName, count) ->
-            Text("${index + 1}. $roomName - $count lượt")
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceEvenly
+        ) {
+            StatisticCard(title = "Doanh thu", value = "${statistic.revenue}đ")
+            StatisticCard(title = "Lượt xem", value = "${statistic.totalViews}")
+            StatisticCard(title = "Đánh giá", value = "${"%.1f".format(statistic.averageRating)}★")
         }
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        Text(
+            text = "Doanh thu theo tháng",
+            style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier.padding(bottom = 8.dp)
+        )
+        BarChart(data = statistic.revenueByMonth.mapValues { it.value.toFloat() })
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        Text(
+            text = "Lượt xem theo ngày",
+            style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier.padding(bottom = 8.dp)
+        )
+        LineChart(data = statistic.viewsByDay.mapValues { it.value.toFloat() })
     }
 }
 
@@ -504,18 +524,78 @@ fun RoomCardItem( room: Room,
 }
 
 @Composable
-fun BarChartView(data: List<Pair<String, Int>>) {
-    val entries = data.mapIndexed { index, (_, value) ->
-        index to value.toFloat()
+fun StatisticCard(title: String, value: String) {
+    Card(
+        modifier = Modifier
+            .width(100.dp)
+            .height(90.dp),
+        elevation = CardDefaults.cardElevation(6.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFFE3F2FD))
+    ) {
+        Column(
+            modifier = Modifier
+                .padding(8.dp)
+                .fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Text(text = value, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            Text(text = title, style = MaterialTheme.typography.bodySmall)
+        }
     }
+}
 
-    val chartModel = entryModelOf(*entries.toTypedArray())
+@Composable
+fun BarChart(data: Map<String, Float>) {
+    val maxVal = data.values.maxOrNull() ?: 0f
+    val barWidth = 24.dp
+    val barSpacing = 8.dp
 
-    Chart(
-        chart = columnChart(), // dùng mặc định
-        model = chartModel,
+    Row(
         modifier = Modifier
             .fillMaxWidth()
-            .height(200.dp)
-    )
+            .horizontalScroll(rememberScrollState()),
+        verticalAlignment = Alignment.Bottom
+    ) {
+        data.forEach { (label, value) ->
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Box(
+                    modifier = Modifier
+                        .height((value / maxVal * 100).dp.coerceAtLeast(10.dp))
+                        .width(barWidth)
+                        .background(Color(0xFF64B5F6))
+                )
+                Text(label, fontSize = 12.sp, modifier = Modifier.padding(top = 4.dp))
+            }
+            Spacer(modifier = Modifier.width(barSpacing))
+        }
+    }
+}
+
+@Composable
+fun LineChart(data: Map<String, Float>) {
+    val sortedData = data.toSortedMap()
+    val points = sortedData.values.toList()
+
+    Canvas(modifier = Modifier
+        .fillMaxWidth()
+        .height(120.dp)
+    ) {
+        val space = size.width / (points.size + 1)
+        val maxVal = points.maxOrNull() ?: 1f
+
+        for (i in 1 until points.size) {
+            val x1 = space * i
+            val y1 = size.height - (points[i - 1] / maxVal * size.height)
+            val x2 = space * (i + 1)
+            val y2 = size.height - (points[i] / maxVal * size.height)
+
+            drawLine(
+                color = Color(0xFF4DB6AC),
+                start = Offset(x1, y1),
+                end = Offset(x2, y2),
+                strokeWidth = 4f
+            )
+        }
+    }
 }

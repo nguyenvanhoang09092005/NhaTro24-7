@@ -65,7 +65,6 @@ class RoomViewModel : ViewModel() {
     }
 
 
-
     fun addRoom(room: Room, onResult: (Boolean) -> Unit) {
         val db = FirebaseFirestore.getInstance()
         val docRef = db.collection("rooms").document()
@@ -77,6 +76,8 @@ class RoomViewModel : ViewModel() {
             "description" to room.description,
             "price" to room.price,
             "location" to room.location,
+            "latitude" to room.latitude,
+            "longitude" to room.longitude,
             "area" to room.area,
             "roomType" to room.roomType,
             "roomCategory" to room.roomCategory,
@@ -228,6 +229,21 @@ class RoomViewModel : ViewModel() {
                 onResult(false)
             }
     }
+
+    fun notifyOwner(ownerId: String, title: String, message: String) {
+        val notification = mapOf(
+            "title" to title,
+            "message" to message,
+            "timestamp" to System.currentTimeMillis()
+        )
+
+        FirebaseFirestore.getInstance()
+            .collection("users")
+            .document(ownerId)
+            .collection("notifications")
+            .add(notification)
+    }
+
 
     fun getBookingRequestsFlow(userId: String): Flow<List<BookingRequest>> = callbackFlow {
         val listenerRegistration = db.collection("booking_requests")

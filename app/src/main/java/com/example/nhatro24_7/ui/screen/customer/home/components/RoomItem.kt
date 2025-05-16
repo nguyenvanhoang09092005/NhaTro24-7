@@ -102,7 +102,7 @@ fun RoomItem( room: Room,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "${room.price.toInt()} VNĐ",
+                            text = "${String.format("%,d", room.price.toInt())} VNĐ",
                             color = Color.White,
                             fontSize = 13.sp,
                             fontWeight = FontWeight.SemiBold

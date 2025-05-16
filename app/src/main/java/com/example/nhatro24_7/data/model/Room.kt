@@ -6,6 +6,8 @@ data class Room(
     val description: String = "",
     val price: Double = 0.0,
     val location: String = "",
+    val latitude: Double = 0.0,
+    val longitude: Double = 0.0,
     val area: Double = 0.0,
     val roomType: String = "",
     val roomCategory: String = "",

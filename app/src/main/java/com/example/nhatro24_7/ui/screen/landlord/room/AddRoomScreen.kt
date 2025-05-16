@@ -85,6 +85,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.example.nhatro24_7.data.model.Room
+import com.example.nhatro24_7.navigation.Routes
 import com.example.nhatro24_7.util.uploadImageToCloudinary
 import com.example.nhatro24_7.viewmodel.RoomViewModel
 import com.google.firebase.auth.FirebaseAuth
@@ -120,14 +121,32 @@ fun AddRoomScreen(navController: NavController, roomViewModel: RoomViewModel) {
 
 
     // Nhận dữ liệu địa chỉ trả về từ màn hình chọn vị trí
+    var latitude by remember { mutableStateOf(0.0) }
+    var longitude by remember { mutableStateOf(0.0) }
+
+    // Nhận địa chỉ
     navController.currentBackStackEntry
         ?.savedStateHandle
         ?.getLiveData<String>("selected_address")
         ?.observeAsState()
-        ?.value?.let { selectedAddress ->
-            address = selectedAddress
+        ?.value?.let { addr ->
+            address = addr
             navController.currentBackStackEntry?.savedStateHandle?.remove<String>("selected_address")
         }
+
+// Nhận tọa độ
+    navController.currentBackStackEntry
+        ?.savedStateHandle
+        ?.getLiveData<List<Double>>("selected_coordinates")
+        ?.observeAsState()
+        ?.value?.let { coords ->
+            if (coords.size == 2) {
+                latitude = coords[0]
+                longitude = coords[1]
+            }
+            navController.currentBackStackEntry?.savedStateHandle?.remove<List<Double>>("selected_coordinates")
+        }
+
 
     Scaffold(
         topBar = {
@@ -163,6 +182,8 @@ fun AddRoomScreen(navController: NavController, roomViewModel: RoomViewModel) {
                                     price = price.toDoubleOrNull() ?: 0.0,
                                     area = area.toDoubleOrNull() ?: 0.0,
                                     location = address,
+                                    latitude = latitude,
+                                    longitude = longitude,
                                     roomType = roomType,
                                     roomCategory = roomCategory,
                                     amenities = selectedAmenities.toList(),
@@ -218,6 +239,7 @@ fun AddRoomScreen(navController: NavController, roomViewModel: RoomViewModel) {
                     price, { price = it },
                     area, { area = it },
                     description, { description = it },
+                    latitude, longitude,
                     selectedAmenities
                 )
                 1 -> ImageUploadStep(mainImage, imageList)
@@ -229,47 +251,6 @@ fun AddRoomScreen(navController: NavController, roomViewModel: RoomViewModel) {
 
 
             Spacer(modifier = Modifier.height(16.dp))
-
-//            Button(
-//                onClick = {
-//                    if (currentStep == 1 && mainImage.value.isEmpty()) {
-//                        Toast.makeText(context, "Bạn cần thêm ảnh chính để tiếp tục.", Toast.LENGTH_SHORT).show()
-//                    } else if (currentStep < 2) {
-//                        currentStep++
-//                    } else {
-//                        val room = Room(
-//                            title = "Tin đăng mới",
-//                            description = "Tin đăng tự động",
-//                            price = price.toDoubleOrNull() ?: 0.0,
-//                            area = area.toDoubleOrNull() ?: 0.0,
-//                            location = address,
-//                            roomType = roomType,
-//                            roomCategory = roomCategory,
-//                            amenities = selectedAmenities.toList(),
-//                            mainImage = mainImage.value,
-//                            images = imageList.toList(),
-//                            owner_id = 1,
-//                            created_at = System.currentTimeMillis()
-//                        )
-//
-//                        scope.launch {
-//                            roomViewModel.addRoom(room) { success ->
-//                                if (success) {
-//                                    Toast.makeText(context, "Đăng tin thành công", Toast.LENGTH_SHORT).show()
-//                                    navController.popBackStack()
-//                                } else {
-//                                    Toast.makeText(context, "Thất bại. Vui lòng thử lại", Toast.LENGTH_SHORT).show()
-//                                }
-//                            }
-//                        }
-//                    }
-//                },
-//                modifier = Modifier.fillMaxWidth(),
-//                enabled = address.isNotBlank() && price.isNotBlank() && area.isNotBlank()
-//            ) {
-//                Text(if (currentStep < 2) "Tiếp theo" else "Xác nhận & Đăng")
-//            }
-
 
         }
     }
@@ -287,6 +268,8 @@ fun InfoStep(
     price: String, onPriceChange: (String) -> Unit,
     area: String, onAreaChange: (String) -> Unit,
     description: String, onDescriptionChange: (String) -> Unit,
+    latitude: Double,
+    longitude: Double,
     selectedAmenities: SnapshotStateList<String>
 
 ) {
@@ -341,14 +324,17 @@ fun InfoStep(
                     color = MaterialTheme.colorScheme.onSurface
                 )
 
+
+
                 //chọn vị trí
                 TextButton(onClick = {
-
+                    navController.navigate(Routes.SELECT_LOCATION)
                 }) {
                     Icon(Icons.Default.LocationOn, contentDescription = "Chọn vị trí", modifier = Modifier.size(16.dp))
                     Spacer(modifier = Modifier.width(4.dp))
                     Text("Chọn vị trí", fontSize = 14.sp, color = MaterialTheme.colorScheme.primary)
                 }
+
 
 
             }
@@ -360,6 +346,15 @@ fun InfoStep(
                 singleLine = true,
                 placeholder = { Text("Nhập địa chỉ") }
             )
+
+            if (latitude != 0.0 && longitude != 0.0) {
+                Text(
+                    text = "Tọa độ: $latitude, $longitude",
+                    fontSize = 12.sp,
+                    color = Color.Gray,
+                    modifier = Modifier.padding(top = 4.dp)
+                )
+            }
         }
 
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {

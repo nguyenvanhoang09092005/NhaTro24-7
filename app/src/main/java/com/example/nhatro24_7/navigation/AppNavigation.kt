@@ -342,6 +342,11 @@ fun AppNavigation(
             BookingRequestDetailScreen(bookingRequestId, navController, RoomViewModel())
         }
 
+        composable(Routes.SELECT_LOCATION) {
+            com.example.nhatro24_7.ui.screen.component.SelectLocationScreen(navController = navController)
+        }
+
+
         // Account Settings
         composable(Routes.CHANGE_PASSWORD) {
             ChangePasswordScreen(navController = navController)

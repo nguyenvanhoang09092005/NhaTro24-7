@@ -122,10 +122,17 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
-    // Vico - thư viện vẽ biểu đồ cho Jetpack Compose
-    implementation("com.patrykandpatrick.vico:compose:1.13.0")
-    implementation("com.patrykandpatrick.vico:compose-m3:1.13.0")
-    implementation("com.patrykandpatrick.vico:core:1.13.0")
+    // Thư viện vẽ biểu đồ cho Jetpack Compose
+    implementation("com.github.PhilJay:MPAndroidChart:v3.1.0")
+    implementation ("org.apache.poi:poi:5.2.3")
+    // Chart support for Jetpack Compose
+//    implementation("com.patrykandpatrick.vico:compose:1.13.0")
+//    implementation("com.patrykandpatrick.vico:core:1.13.0")
+//    implementation ("com.patrykandpatrick:vico-compose:1.0.0-alpha04")
+
+    // map
+    implementation ("com.mapbox.maps:android:10.15.1")
+    implementation ("com.mapbox.mapboxsdk:mapbox-sdk-services:5.8.0")
 
     implementation("com.cloudinary:cloudinary-android:2.3.1")
 
@@ -135,5 +142,16 @@ dependencies {
     // Xử lý lỗi Duplicate class - Exclude firebase-common nếu cần
     implementation("com.google.firebase:firebase-firestore-ktx") {
         exclude(group = "com.google.firebase", module = "firebase-common")
+    }
+}
+
+configurations.all {
+    resolutionStrategy {
+        force("com.google.code.findbugs:jsr305:3.0.2")
+        force("androidx.lifecycle:lifecycle-runtime-ktx:2.8.3")
+        force("androidx.lifecycle:lifecycle-runtime:2.8.3")
+        force("androidx.lifecycle:lifecycle-runtime-android:2.8.3")
+        force("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.4")
+        force("com.squareup.okhttp3:okhttp:4.9.3")
     }
 }

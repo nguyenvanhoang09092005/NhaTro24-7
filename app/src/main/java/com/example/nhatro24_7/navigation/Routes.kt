@@ -50,6 +50,7 @@ object Routes {
     const val ROOM_LIST = "room_list"
     const val LANDLORD_STATISTIC_ROUTE = "landlord_statistic"
     fun landlordStatisticRoute(landlordId: String) = "$LANDLORD_STATISTIC_ROUTE/$landlordId"
+    const val SELECT_LOCATION = "select_location"
 
 
     const val CUSTOMER_CHAT = "customer_chat/{chatId}/{receiverId}/{receiverName}/{receiverAvatarUrl}"

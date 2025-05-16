@@ -93,12 +93,23 @@ class AuthViewModel @Inject constructor(
             val user = FirebaseAuth.getInstance().currentUser
             if (user != null) {
                 val role = authRepository.fetchUserRole()
-                onLoggedIn(role)
+                FirebaseFirestore.getInstance().collection("users").document(user.uid).get()
+                    .addOnSuccessListener { document ->
+                        val currentUser = document.toObject(User::class.java)
+                        _currentUser.value = currentUser
+                        onLoggedIn(role)
+                    }
+                    .addOnFailureListener {
+                        onLoggedIn(role)
+                    }
             } else {
-                onLoggedIn("guest") // Quan trọng: Luôn gọi callback để tránh kẹt màn hình splash
+                onLoggedIn("guest")
             }
         }
     }
+
+
+
 
     private val _userRole = MutableStateFlow("customer")
     val userRole: StateFlow<String> = _userRole

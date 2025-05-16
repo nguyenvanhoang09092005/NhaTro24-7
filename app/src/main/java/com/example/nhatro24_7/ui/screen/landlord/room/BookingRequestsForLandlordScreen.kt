@@ -196,11 +196,21 @@ fun BookingRequestsForLandlordScreen(
                                                     if (success) {
                                                         roomViewModel.markRoomAsUnavailable(request.roomId)
                                                         Toast.makeText(context, "Đã chấp nhận", Toast.LENGTH_SHORT).show()
+
+                                                        // Thông báo cho chủ trọ
                                                         notificationViewModel.showNotification(
                                                             context,
                                                             title = "Yêu cầu đặt phòng",
                                                             message = "Bạn đã chấp nhận yêu cầu của $userName cho phòng $roomTitle"
                                                         )
+
+                                                        // Thông báo cho khách hàng
+                                                        notificationViewModel.showNotification(
+                                                            context,
+                                                            title = "Yêu cầu đặt phòng",
+                                                            message = "Chủ trọ đã chấp nhận yêu cầu của bạn cho phòng $roomTitle"
+                                                        )
+
                                                         refreshRequests()
                                                     } else {
                                                         Toast.makeText(context, "Lỗi khi cập nhật!", Toast.LENGTH_SHORT).show()
@@ -217,11 +227,21 @@ fun BookingRequestsForLandlordScreen(
                                                 roomViewModel.updateBookingStatus(request.id, "rejected") { success ->
                                                     if (success) {
                                                         Toast.makeText(context, "Đã từ chối", Toast.LENGTH_SHORT).show()
+
+                                                        // Thông báo cho chủ trọ
                                                         notificationViewModel.showNotification(
                                                             context,
                                                             title = "Yêu cầu bị từ chối",
                                                             message = "Bạn đã từ chối yêu cầu đặt phòng của $userName"
                                                         )
+
+                                                        // Thông báo cho khách hàng
+                                                        notificationViewModel.showNotification(
+                                                            context,
+                                                            title = "Yêu cầu bị từ chối",
+                                                            message = "Yêu cầu đặt phòng của bạn đã bị từ chối bởi chủ trọ."
+                                                        )
+
                                                         refreshRequests()
                                                     } else {
                                                         Toast.makeText(context, "Lỗi khi cập nhật!", Toast.LENGTH_SHORT).show()

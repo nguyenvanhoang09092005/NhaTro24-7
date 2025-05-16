@@ -23,8 +23,21 @@ class StatisticViewModel(
         _isLoading.value = true
         viewModelScope.launch {
             try {
+                // Lấy thống kê từ repository
                 val result = repository.getStatisticByLandlord(landlordId)
-                _statistic.value = result
+
+                // Cập nhật giá trị vào _statistic
+                _statistic.value = Statistic(
+                    revenue = result.revenue,
+                    totalBookings = result.totalBookings,
+                    totalCancellations = result.totalCancellations,
+                    totalCheckouts = result.totalCheckouts,
+                    totalViews = result.totalViews,
+                    averageRating = result.averageRating,
+                    paidRoomCount = result.paidRoomCount,
+                    revenueByMonth = result.revenueByMonth,
+                    viewsByDay = result.viewsByDay
+                )
             } catch (e: Exception) {
                 Log.e("StatisticViewModel", "Lỗi: ${e.message}", e)
             } finally {

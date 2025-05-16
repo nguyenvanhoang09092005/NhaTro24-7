@@ -246,6 +246,15 @@ fun ActionSection(request: BookingRequest, navController: NavController, roomTit
         return
     }
 
+    var ownerId by remember { mutableStateOf("") }
+
+    LaunchedEffect(request.roomId) {
+        roomViewModel.getRoomById(request.roomId) { room ->
+            ownerId = room?.owner_id ?: ""
+        }
+    }
+
+
     when (request.status) {
         "pending", "accepted" -> {
             Row(
@@ -270,6 +279,13 @@ fun ActionSection(request: BookingRequest, navController: NavController, roomTit
                             context = context,
                             title = "Huỷ đặt phòng",
                             message = "Bạn đã huỷ phòng $roomTitle thành công."
+                        )
+
+                        // Gửi thông báo cho chủ trọ
+                        roomViewModel.notifyOwner(
+                            ownerId = ownerId,
+                            title = "Khách đã huỷ phòng",
+                            message = "Khách đã huỷ phòng $roomTitle."
                         )
                     },
                     shape = RoundedCornerShape(12.dp),
@@ -298,6 +314,13 @@ fun ActionSection(request: BookingRequest, navController: NavController, roomTit
                             context = context,
                             title = "Trả phòng thành công",
                             message = "Cảm ơn bạn đã sử dụng dịch vụ phòng $roomTitle."
+                        )
+
+                        // Gửi thông báo cho chủ trọ
+                        roomViewModel.notifyOwner(
+                            ownerId = ownerId,
+                            title = "Khách đã trả phòng",
+                            message = "Khách đã trả phòng $roomTitle."
                         )
                     },
                     shape = RoundedCornerShape(12.dp),
