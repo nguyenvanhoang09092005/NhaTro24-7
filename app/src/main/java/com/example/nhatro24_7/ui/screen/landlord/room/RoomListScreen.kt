@@ -28,6 +28,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Chat
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.ui.graphics.Brush
 import com.example.nhatro24_7.ui.screen.chat.EnhancedTopAppBarChat
 import com.example.nhatro24_7.viewmodel.RoomViewModel
@@ -59,15 +61,17 @@ fun RoomListScreen(
             modifier = Modifier.padding(innerPadding)
         ) {
             items(roomsByLandlord) { room ->
-                RoomItem(room = room, navController = navController)
+                RoomItem(room = room, navController = navController, roomViewModel = roomViewModel)
             }
+
         }
     }
 }
 
 
 @Composable
-fun RoomItem(room: Room, navController: NavController) {
+fun RoomItem(room: Room, navController: NavController, roomViewModel: RoomViewModel)
+ {
 
     Column(
         modifier = Modifier
@@ -81,9 +85,6 @@ fun RoomItem(room: Room, navController: NavController) {
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(12.dp))
-                .clickable {
-                    navController.navigate("room_detail_landlord/${room.id}")
-                }
         ) {
             Box(modifier = Modifier.size(100.dp)) {
                 AsyncImage(
@@ -133,57 +134,53 @@ fun RoomItem(room: Room, navController: NavController) {
                 Spacer(modifier = Modifier.height(4.dp))
 
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = Icons.Default.Place,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(16.dp)
-                    )
+                    Icon(Icons.Default.Place, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(16.dp))
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text(
-                        text = room.location,
-                        fontSize = 13.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
+                    Text(text = room.location, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
 
                 Spacer(modifier = Modifier.height(2.dp))
 
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = Icons.Default.SquareFoot,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(16.dp)
-                    )
+                    Icon(Icons.Default.SquareFoot, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(16.dp))
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text(
-                        text = "${room.area} m²",
-                        fontSize = 13.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    Text(text = "${room.area} m²", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
 
                 Spacer(modifier = Modifier.height(2.dp))
 
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = Icons.Default.Apartment,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(16.dp)
-                    )
+                    Icon(Icons.Default.Apartment, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(16.dp))
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text(
-                        text = room.roomCategory,
-                        fontSize = 13.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    Text(text = room.roomCategory, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+
+            Column(
+                horizontalAlignment = Alignment.End,
+                verticalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier
+                    .align(Alignment.Top)
+                    .padding(end = 4.dp)
+            ) {
+                IconButton(onClick = {
+                    navController.navigate("addPost?roomId=${room.id}")
+                }) {
+                    Icon(Icons.Default.Edit, contentDescription = "Sửa", tint = MaterialTheme.colorScheme.primary)
+                }
+
+                IconButton(onClick = {
+                    roomViewModel.deleteRoom(room.id) { success ->
+                        if (success) {
+                            // Có thể show Toast hoặc cập nhật lại danh sách
+                        }
+                    }
+                }) {
+                    Icon(Icons.Default.Delete, contentDescription = "Xoá", tint = Color.Red)
                 }
             }
         }
+
 
         Spacer(modifier = Modifier.height(8.dp))
         Divider(color = MaterialTheme.colorScheme.outlineVariant, thickness = 1.dp)

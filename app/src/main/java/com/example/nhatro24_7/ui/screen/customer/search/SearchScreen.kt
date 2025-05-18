@@ -28,7 +28,10 @@ import com.example.nhatro24_7.ui.screen.customer.component.BottomNavBar
 import com.example.nhatro24_7.viewmodel.RoomViewModel
 import com.google.accompanist.flowlayout.FlowRow
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.graphics.vector.ImageVector
+import kotlin.math.pow
+import kotlin.math.*
 
 @Composable
 fun SearchScreen(
@@ -38,29 +41,61 @@ fun SearchScreen(
     val searchQuery = remember { mutableStateOf(TextFieldValue("")) }
     val selectedAreaRange = remember { mutableStateOf<String?>(null) }
     val selectedMinPrice = remember { mutableStateOf(0f) }
-    val selectedMaxPrice = remember { mutableStateOf(5_000_000f) }
+    val selectedMaxPrice = remember { mutableStateOf(10_000_000f) }
 
-    val rooms = viewModel.rooms
+    val savedStateHandle = navController.currentBackStackEntry?.savedStateHandle
+
+
+    val selectedCoordinates = savedStateHandle?.getLiveData<List<Double>>("selected_coordinates")?.observeAsState()
+    val preFilteredRooms = savedStateHandle?.getLiveData<List<Room>>("filtered_rooms")?.observeAsState()
+    val rooms = preFilteredRooms?.value ?: viewModel.rooms
+
+    val selectedLatLng = remember { mutableStateOf<Pair<Double, Double>?>(null) }
+
+    LaunchedEffect(selectedCoordinates?.value) {
+        selectedCoordinates?.value?.let { coords ->
+            if (coords.size == 2) {
+                selectedLatLng.value = coords[0] to coords[1]
+            }
+            savedStateHandle.remove<List<Double>>("selected_coordinates")
+        }
+    }
+//
+//    val rooms = preFilteredRooms.value ?: viewModel.rooms
+
+//    val rooms = viewModel.rooms
     val filteredRooms = remember(
         searchQuery.value.text,
         selectedAreaRange.value,
         selectedMinPrice.value,
         selectedMaxPrice.value,
+        selectedLatLng.value,
         rooms
     ) {
         rooms.filter { room ->
-            val matchesLocation = room.location.contains(searchQuery.value.text, ignoreCase = true)
+            val matchesLocation = if (selectedLatLng.value != null) {
+                true
+            } else {
+                room.location.contains(searchQuery.value.text, ignoreCase = true)
+            }
+
             val matchesArea = when (selectedAreaRange.value) {
                 "<20" -> room.area < 20
                 "20-30" -> room.area in 20.0..30.0
                 ">30" -> room.area > 30
                 else -> true
             }
+
             val matchesPrice = room.price in selectedMinPrice.value..selectedMaxPrice.value
 
-            matchesLocation && matchesArea && matchesPrice
+            val withinRadius = selectedLatLng.value?.let { (lat, lon) ->
+                haversine(lat, lon, room.latitude, room.longitude) <= 5.0
+            } ?: true
+
+            matchesLocation && matchesArea && matchesPrice && withinRadius
         }
     }
+
 
     Scaffold(
         bottomBar = { BottomNavBar(navController = navController) }
@@ -84,11 +119,23 @@ fun SearchScreen(
                 },
                 leadingIcon = {
                     Icon(
-                        Icons.Default.Search,
-                        contentDescription = null,
+                        imageVector = Icons.Default.Search,
+                        contentDescription = "Tìm kiếm",
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 },
+                trailingIcon = {
+                    IconButton(onClick = {
+                        navController.navigate("selectSearchLocation")
+                    }) {
+                        Icon(
+                            imageVector = Icons.Default.Map,
+                            contentDescription = "Tìm kiếm bằng bản đồ",
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                },
+
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 8.dp)
@@ -109,6 +156,7 @@ fun SearchScreen(
                 singleLine = true,
                 shape = RoundedCornerShape(24.dp)
             )
+
 
 
 
@@ -163,11 +211,16 @@ fun SearchScreen(
                             modifier = Modifier.size(48.dp)
                         )
                         Spacer(modifier = Modifier.height(12.dp))
+
                         Text(
-                            text = "Không tìm thấy phòng phù hợp.",
+                            text = if (selectedLatLng.value != null)
+                                "Không có phòng nào trong bán kính 5km quanh đây."
+                            else
+                                "Không tìm thấy phòng phù hợp.",
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             style = MaterialTheme.typography.bodyLarge
                         )
+
                     }
                 }
             }
@@ -175,6 +228,7 @@ fun SearchScreen(
         }
     }
 }
+
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -227,7 +281,7 @@ fun PriceFilterSection(
     selectedMinPrice: MutableState<Float>,
     selectedMaxPrice: MutableState<Float>
 ) {
-    val priceRange = 0f..5_000_000f
+    val priceRange = 0f..10_000_000f
 
     Column(
         modifier = Modifier
@@ -283,7 +337,7 @@ fun PriceFilterSection(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text("0đ", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Text("5.000.000đ", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("10.000.000đ", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
     }
@@ -378,4 +432,31 @@ fun InfoRow(
             style = MaterialTheme.typography.bodySmall
         )
     }
+}
+
+fun haversine(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
+    val R = 6371 // bán kính Trái Đất (km)
+    val dLat = Math.toRadians(lat2 - lat1)
+    val dLon = Math.toRadians(lon2 - lon1)
+    val a = Math.sin(dLat / 2).pow(2.0) +
+            Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2)) *
+            Math.sin(dLon / 2).pow(2.0)
+    val c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+    return R * c
+}
+
+
+fun calculateDistance(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
+    val earthRadius = 6371.0 // Đơn vị: km
+
+    val dLat = Math.toRadians(lat2 - lat1)
+    val dLon = Math.toRadians(lon2 - lon1)
+
+    val a = sin(dLat / 2).pow(2.0) +
+            cos(Math.toRadians(lat1)) * cos(Math.toRadians(lat2)) *
+            sin(dLon / 2).pow(2.0)
+
+    val c = 2 * atan2(sqrt(a), sqrt(1 - a))
+
+    return earthRadius * c // Trả về khoảng cách (km)
 }

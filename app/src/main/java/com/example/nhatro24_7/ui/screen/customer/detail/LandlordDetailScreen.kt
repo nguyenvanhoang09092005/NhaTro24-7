@@ -47,6 +47,7 @@ fun LandlordDetailScreen(
     var selectedTab by remember { mutableStateOf(0) }
 
     LaunchedEffect(landlordId) {
+        // Lấy thông tin chủ trọ
         FirebaseFirestore.getInstance()
             .collection("users")
             .document(landlordId)
@@ -55,20 +56,26 @@ fun LandlordDetailScreen(
                 landlordInfo.value = doc.toObject(User::class.java)
             }
 
+        // Lấy danh sách phòng (kể cả phòng bị ẩn)
         roomViewModel.fetchRoomsByOwner(landlordId) { rooms ->
             roomsByLandlord.clear()
             roomsByLandlord.addAll(rooms)
-        }
 
-        FirebaseFirestore.getInstance()
-            .collection("reviews")
-            .whereEqualTo("userId", landlordId)
-            .get()
-            .addOnSuccessListener { result ->
-                landlordReviews.clear()
-                landlordReviews.addAll(result.toObjects(Review::class.java))
+            // Lấy danh sách đánh giá từ các phòng đó
+            val roomIds = rooms.map { it.id }
+            if (roomIds.isNotEmpty()) {
+                FirebaseFirestore.getInstance()
+                    .collection("reviews")
+                    .whereIn("roomId", roomIds)
+                    .get()
+                    .addOnSuccessListener { result ->
+                        landlordReviews.clear()
+                        landlordReviews.addAll(result.toObjects(Review::class.java))
+                    }
             }
+        }
     }
+
 
     Scaffold(
         topBar = {
@@ -189,38 +196,155 @@ fun LandlordDetailScreen(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 if (selectedTab == 0) {
+                    val reviewsByRoom = landlordReviews.groupBy { it.roomId }
+
                     if (landlordReviews.isEmpty()) {
                         Text("Chủ trọ này chưa có đánh giá nào.", color = MaterialTheme.colorScheme.onSurfaceVariant)
                     } else {
-                        landlordReviews.forEach { review ->
-                            Card(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 4.dp),
-                                shape = RoundedCornerShape(8.dp),
-                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
-                            ) {
-                                Column(modifier = Modifier.padding(12.dp)) {
-                                    Text("Đánh giá: ${review.rating}/5", fontWeight = FontWeight.Bold)
-                                    Spacer(modifier = Modifier.height(4.dp))
-                                    Text(review.comment)
-                                    Spacer(modifier = Modifier.height(4.dp))
+                        reviewsByRoom.forEach { (roomId, reviews) ->
+
+                            val room = roomViewModel.rooms.find { it.id == roomId }
+
+                            val averageRating = if (reviews.isNotEmpty()) {
+                                reviews.map { it.rating }.average()
+                            } else 0.0
+
+                            val reviewCount = reviews.size
+
+                            Column(modifier = Modifier.padding(vertical = 8.dp)) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
                                     Text(
-                                        text = "Gửi lúc: ${
-                                            SimpleDateFormat("dd/MM/yyyy").format(Date(review.submittedAt))
-                                        }",
-                                        fontSize = 12.sp,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        text = "Phòng: ${room?.title ?: "Không xác định"}",
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 16.sp,
+                                        color = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.weight(1f)
                                     )
+
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Icon(
+                                            imageVector = Icons.Default.Star,
+                                            contentDescription = "Star",
+                                            tint = Color(0xFFFFC107),
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(2.dp))
+                                        Text(
+                                            text = String.format("%.1f", averageRating),
+                                            fontWeight = FontWeight.SemiBold,
+                                            fontSize = 14.sp
+                                        )
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Text(
+                                            text = "($reviewCount đánh giá)",
+                                            fontSize = 13.sp,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
                                 }
+
+                                Spacer(modifier = Modifier.height(8.dp))
+
+                                // Scrollable list of reviews for each room
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .heightIn(min = 100.dp, max = 260.dp)
+                                        .verticalScroll(rememberScrollState())
+                                ) {
+                                    reviews.forEachIndexed { index, review ->
+                                        val reviewer = roomViewModel.users.find { it.id == review.userId }
+
+                                        Card(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(vertical = 6.dp),
+                                            shape = RoundedCornerShape(12.dp),
+                                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                                        ) {
+                                            Column(modifier = Modifier.padding(12.dp)) {
+
+                                                Row(
+                                                    modifier = Modifier.fillMaxWidth(),
+                                                    verticalAlignment = Alignment.CenterVertically
+                                                ) {
+                                                    Row(
+                                                        verticalAlignment = Alignment.CenterVertically,
+                                                        modifier = Modifier.weight(1f)
+                                                    ) {
+                                                        AsyncImage(
+                                                            model = reviewer?.avatarUrl,
+                                                            contentDescription = "Avatar",
+                                                            modifier = Modifier
+                                                                .size(40.dp)
+                                                                .clip(CircleShape)
+                                                                .border(1.dp, MaterialTheme.colorScheme.primary, CircleShape),
+                                                            contentScale = ContentScale.Crop
+                                                        )
+                                                        Spacer(modifier = Modifier.width(8.dp))
+                                                        Text(
+                                                            text = reviewer?.username ?: "Người dùng ẩn danh",
+                                                            fontWeight = FontWeight.Bold,
+                                                            fontSize = 15.sp
+                                                        )
+                                                    }
+
+                                                    Text(
+                                                        text = SimpleDateFormat("dd/MM/yyyy").format(Date(review.submittedAt)),
+                                                        fontSize = 12.sp,
+                                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                    )
+                                                }
+
+                                                Spacer(modifier = Modifier.height(6.dp))
+
+                                                // Dòng sao đánh giá
+                                                Row {
+                                                    repeat(review.rating.toInt()) {
+                                                        Icon(
+                                                            imageVector = Icons.Default.Star,
+                                                            contentDescription = "Star",
+                                                            tint = Color(0xFFFFC107),
+                                                            modifier = Modifier.size(18.dp)
+                                                        )
+                                                    }
+                                                }
+
+                                                Spacer(modifier = Modifier.height(8.dp))
+
+                                                // Nội dung bình luận
+                                                Text(
+                                                    text = review.comment,
+                                                    style = MaterialTheme.typography.bodyMedium
+                                                )
+                                            }
+                                        }
+
+                                        // Divider dưới mỗi đánh giá, trừ cái cuối
+//                                        if (index < reviews.size - 1) {
+//                                            Divider(
+//                                                modifier = Modifier.padding(horizontal = 8.dp),
+//                                                color = MaterialTheme.colorScheme.outlineVariant,
+//                                                thickness = 1.dp
+//                                            )
+//                                        }
+                                    }
+                                }
+
+                                Spacer(modifier = Modifier.height(16.dp))
                             }
                         }
                     }
+
+
                 } else {
                     if (roomsByLandlord.isEmpty()) {
                         Text("Chủ trọ này chưa đăng phòng nào.", color = MaterialTheme.colorScheme.onSurfaceVariant)
                     } else {
-                        roomsByLandlord.forEach { room ->
+                        roomsByLandlord.filter { it.isAvailable }.forEach { room ->
                             Column(
                                 modifier = Modifier
                                     .fillMaxWidth()

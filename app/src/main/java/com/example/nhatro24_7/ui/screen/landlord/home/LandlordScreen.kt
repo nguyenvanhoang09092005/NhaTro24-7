@@ -45,6 +45,7 @@ import androidx.compose.material.icons.filled.Star
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.viewinterop.AndroidView
+import com.example.nhatro24_7.ui.screen.component.CommonTopBar
 import com.github.mikephil.charting.charts.BarChart
 import com.github.mikephil.charting.charts.LineChart
 import com.github.mikephil.charting.data.BarData
@@ -79,6 +80,10 @@ fun LandlordScreen(
     Scaffold(
         bottomBar = {
             com.example.nhatro24_7.ui.screen.landlord.component.BottomNavBar(navController = navController)
+
+        },
+                topBar = {
+            CommonTopBar("Nhà Trọ 24/7")
         }
     ) { innerPadding ->
         LazyColumn(
@@ -88,21 +93,7 @@ fun LandlordScreen(
                 .padding(horizontal = 10.dp),
             horizontalAlignment = Alignment.Start
         ) {
-            item {
-                Text("Chào mừng chủ trọ!", fontSize = 24.sp, color = MaterialTheme.colorScheme.primary)
-                Spacer(modifier = Modifier.height(8.dp))
-                Text("Dưới đây là tổng quan thống kê và danh sách phòng của bạn.", fontSize = 16.sp)
-                Spacer(modifier = Modifier.height(16.dp))
-            }
 
-            item {
-                if (isLoading) {
-                    CircularProgressIndicator(modifier = Modifier.padding(16.dp))
-                } else {
-                    StatisticSection(statistic = statistic)
-                }
-                Spacer(modifier = Modifier.height(16.dp))
-            }
 
             item {
                 Text("Danh sách phòng", fontSize = 20.sp, fontWeight = FontWeight.Bold)
@@ -195,56 +186,6 @@ fun LandlordScreen(
         }
     }
 }
-
-@Composable
-fun StatisticSection(statistic: Statistic) {
-    Column(modifier = Modifier.padding(16.dp)) {
-        Text(
-            text = "Thống kê tổng quan",
-            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-            modifier = Modifier.padding(bottom = 12.dp)
-        )
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly
-        ) {
-            StatisticCard(title = "Đặt phòng", value = "${statistic.totalBookings}")
-            StatisticCard(title = "Huỷ", value = "${statistic.totalCancellations}")
-            StatisticCard(title = "Trả phòng", value = "${statistic.totalCheckouts}")
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly
-        ) {
-            StatisticCard(title = "Doanh thu", value = "${statistic.revenue}đ")
-            StatisticCard(title = "Lượt xem", value = "${statistic.totalViews}")
-            StatisticCard(title = "Đánh giá", value = "${"%.1f".format(statistic.averageRating)}★")
-        }
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        Text(
-            text = "Doanh thu theo tháng",
-            style = MaterialTheme.typography.titleMedium,
-            modifier = Modifier.padding(bottom = 8.dp)
-        )
-        BarChart(data = statistic.revenueByMonth.mapValues { it.value.toFloat() })
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        Text(
-            text = "Lượt xem theo ngày",
-            style = MaterialTheme.typography.titleMedium,
-            modifier = Modifier.padding(bottom = 8.dp)
-        )
-        LineChart(data = statistic.viewsByDay.mapValues { it.value.toFloat() })
-    }
-}
-
 
 @Composable
 fun RoomItem(room: Room, navController: NavController) {
@@ -519,83 +460,6 @@ fun RoomCardItem( room: Room,
                     overflow = TextOverflow.Ellipsis // Thêm overflow vào đây
                 )
             }
-        }
-    }
-}
-
-@Composable
-fun StatisticCard(title: String, value: String) {
-    Card(
-        modifier = Modifier
-            .width(100.dp)
-            .height(90.dp),
-        elevation = CardDefaults.cardElevation(6.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFFE3F2FD))
-    ) {
-        Column(
-            modifier = Modifier
-                .padding(8.dp)
-                .fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            Text(text = value, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-            Text(text = title, style = MaterialTheme.typography.bodySmall)
-        }
-    }
-}
-
-@Composable
-fun BarChart(data: Map<String, Float>) {
-    val maxVal = data.values.maxOrNull() ?: 0f
-    val barWidth = 24.dp
-    val barSpacing = 8.dp
-
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .horizontalScroll(rememberScrollState()),
-        verticalAlignment = Alignment.Bottom
-    ) {
-        data.forEach { (label, value) ->
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Box(
-                    modifier = Modifier
-                        .height((value / maxVal * 100).dp.coerceAtLeast(10.dp))
-                        .width(barWidth)
-                        .background(Color(0xFF64B5F6))
-                )
-                Text(label, fontSize = 12.sp, modifier = Modifier.padding(top = 4.dp))
-            }
-            Spacer(modifier = Modifier.width(barSpacing))
-        }
-    }
-}
-
-@Composable
-fun LineChart(data: Map<String, Float>) {
-    val sortedData = data.toSortedMap()
-    val points = sortedData.values.toList()
-
-    Canvas(modifier = Modifier
-        .fillMaxWidth()
-        .height(120.dp)
-    ) {
-        val space = size.width / (points.size + 1)
-        val maxVal = points.maxOrNull() ?: 1f
-
-        for (i in 1 until points.size) {
-            val x1 = space * i
-            val y1 = size.height - (points[i - 1] / maxVal * size.height)
-            val x2 = space * (i + 1)
-            val y2 = size.height - (points[i] / maxVal * size.height)
-
-            drawLine(
-                color = Color(0xFF4DB6AC),
-                start = Offset(x1, y1),
-                end = Offset(x2, y2),
-                strokeWidth = 4f
-            )
         }
     }
 }

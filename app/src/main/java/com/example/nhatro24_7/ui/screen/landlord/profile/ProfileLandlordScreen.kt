@@ -24,7 +24,6 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
 import com.example.nhatro24_7.navigation.Routes
-import com.example.nhatro24_7.navigation.Routes.landlordStatisticRoute
 import com.example.nhatro24_7.ui.screen.customer.profile.SettingToggleItem
 import com.example.nhatro24_7.ui.screen.landlord.component.BottomNavBar
 import com.example.nhatro24_7.ui.screen.landlord.profile.ExpandableSection
@@ -150,16 +149,6 @@ fun ProfileLandlordScreen(
                         Triple("Thêm tài khoản ngân hàng", Icons.Default.AddCard, "add_bank_account"),
                         Triple("Danh sách tài khoản ngân hàng", Icons.Default.AccountBalance, "list_bank_accounts")
                     ), navController)
-
-                com.example.nhatro24_7.ui.screen.customer.profile.ProfileOption(
-                    icon = Icons.Default.Info,
-                    title = "Thống kê"
-                ) {
-                    viewModel.getCurrentUserId()?.let { landlordId ->
-                        navController.navigate("${Routes.LANDLORD_STATISTIC_ROUTE}/$landlordId")
-                    }
-                }
-
 
                 com.example.nhatro24_7.ui.screen.customer.profile.ProfileOption(
                     Icons.Default.Info,

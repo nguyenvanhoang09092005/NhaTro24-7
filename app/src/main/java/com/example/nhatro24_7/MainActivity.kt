@@ -51,8 +51,8 @@ class MainActivity : ComponentActivity() {
             val roomViewModel: RoomViewModel = hiltViewModel()
 //            val notificationViewModel: NotificationViewModel = hiltViewModel()
 
-            //Yêu cầu quyền
-            val requestPermissionLauncher =
+            // Yêu cầu quyền thông báo (API 33+)
+            val notificationPermissionLauncher =
                 rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
                     if (!isGranted) {
                         Toast.makeText(context, "Không có quyền thông báo!", Toast.LENGTH_SHORT).show()
@@ -63,10 +63,27 @@ class MainActivity : ComponentActivity() {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
                     ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
                 ) {
-                    requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                    notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
                 }
             }
 
+            // Yêu cầu quyền truy cập vị trí
+            val locationPermissionLauncher =
+                rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
+                    if (!isGranted) {
+                        Toast.makeText(context, "Ứng dụng cần quyền truy cập vị trí để hoạt động", Toast.LENGTH_LONG).show()
+                    }
+                }
+
+            LaunchedEffect(Unit) {
+                val permissionCheckResult = ContextCompat.checkSelfPermission(
+                    context,
+                    Manifest.permission.ACCESS_FINE_LOCATION
+                )
+                if (permissionCheckResult != PackageManager.PERMISSION_GRANTED) {
+                    locationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+                }
+            }
 
             // Áp dụng theme
             NhaTro24_7Theme(darkTheme = isDarkMode) {

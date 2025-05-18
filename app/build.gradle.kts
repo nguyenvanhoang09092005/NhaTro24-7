@@ -97,7 +97,7 @@ dependencies {
     // Material Icons (đã kiểm tra version)
     implementation("androidx.compose.material:material-icons-extended:1.6.4")
 
-    implementation("com.squareup.okhttp3:okhttp:4.10.0")
+//    implementation("com.squareup.okhttp3:okhttp:4.10.0")
 
 
     implementation("androidx.datastore:datastore-preferences:1.0.0")
@@ -133,6 +133,7 @@ dependencies {
     // map
     implementation ("com.mapbox.maps:android:10.15.1")
     implementation ("com.mapbox.mapboxsdk:mapbox-sdk-services:5.8.0")
+//    implementation ("org.imperiumlabs:geofirestore-android:1.5.0")
 
     implementation("com.cloudinary:cloudinary-android:2.3.1")
 

@@ -48,6 +48,7 @@ fun RoomDetailScreen(roomId: String?, navController: NavController, roomViewMode
     val userId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
     val context = LocalContext.current
     val reviews = remember { mutableStateListOf<Review>() }
+    var selectedStarFilter by remember { mutableStateOf(0) } // 0 = tất cả
 
     LaunchedEffect(roomId) {
         roomViewModel.getReviewsByRoomId(roomId ?: "") {
@@ -163,6 +164,25 @@ fun RoomDetailScreen(roomId: String?, navController: NavController, roomViewMode
                     contentScale = ContentScale.Crop
                 )
                 Spacer(modifier = Modifier.height(10.dp))
+                Row(
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Title,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(28.dp)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = room.title,
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+
                 // Địa chỉ
                 Row(
                     modifier = Modifier.padding(horizontal = 16.dp),
@@ -403,6 +423,157 @@ fun RoomDetailScreen(roomId: String?, navController: NavController, roomViewMode
                     )
                 }
 
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Text(
+                    "Đánh giá của người dùng",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(horizontal = 16.dp)
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                val averageRating = if (reviews.isNotEmpty()) {
+                    reviews.sumOf { it.rating.toDouble() } / reviews.size
+                } else 0.0
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "${String.format("%.1f", averageRating)}⭐ (${reviews.size} đánh giá)",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 16.sp,
+//                        color = MaterialTheme.colorScheme.primary
+                    )
+
+                    // Dropdown chọn sao lọc
+                    Row(
+                        modifier = Modifier
+                            .horizontalScroll(rememberScrollState())
+                    ) {
+                        (1..5).forEach { star ->
+                            TextButton(onClick = { selectedStarFilter = star }) {
+                                Text(
+                                    "$star⭐",
+                                    color = if (selectedStarFilter == star) MaterialTheme.colorScheme.primary else Color.Gray,
+                                    fontSize = 14.sp
+                                )
+                            }
+                        }
+                        TextButton(onClick = { selectedStarFilter = 0 }) {
+                            Text(
+                                "Tất cả",
+                                color = if (selectedStarFilter == 0) MaterialTheme.colorScheme.primary else Color.Gray,
+                                fontSize = 14.sp
+                            )
+                        }
+                    }
+
+                }
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(340.dp)
+                        .padding(horizontal = 16.dp)
+                        .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(12.dp))
+                        .verticalScroll(rememberScrollState())
+                        .padding(12.dp)
+                ) {
+                    if (reviews.isEmpty()) {
+                        Text(
+                            "Chưa có đánh giá nào.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = Color.Gray
+                        )
+                    } else {
+                        val filteredReviews = if (selectedStarFilter == 0) {
+                            reviews
+                        } else {
+                            reviews.filter { it.rating.toInt() == selectedStarFilter }
+                        }
+
+                        if (filteredReviews.isEmpty()) {
+                            Text("Không có đánh giá nào với số sao tương ứng.")
+                        } else {
+                            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                filteredReviews
+                                    .sortedByDescending { it.submittedAt }
+                                    .forEach { review ->
+                                    val reviewer = roomViewModel.users.find { it.id == review.userId }
+
+                                    Card(
+                                        modifier = Modifier
+                                            .fillMaxWidth(),
+                                        shape = RoundedCornerShape(12.dp),
+                                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                                    ) {
+                                        Column(modifier = Modifier.padding(12.dp)) {
+                                            Row(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                Row(
+                                                    verticalAlignment = Alignment.CenterVertically,
+                                                    modifier = Modifier.weight(1f)
+                                                ) {
+                                                    AsyncImage(
+                                                        model = reviewer?.avatarUrl,
+                                                        contentDescription = "Avatar",
+                                                        modifier = Modifier
+                                                            .size(40.dp)
+                                                            .clip(CircleShape)
+                                                            .border(1.dp, MaterialTheme.colorScheme.primary, CircleShape),
+                                                        contentScale = ContentScale.Crop
+                                                    )
+                                                    Spacer(modifier = Modifier.width(8.dp))
+                                                    Text(
+                                                        text = reviewer?.username ?: "Người dùng ẩn danh",
+                                                        fontWeight = FontWeight.Bold,
+                                                        fontSize = 15.sp
+                                                    )
+                                                }
+
+                                                Text(
+                                                    text = SimpleDateFormat("dd/MM/yyyy").format(Date(review.submittedAt)),
+                                                    fontSize = 12.sp,
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                )
+                                            }
+
+                                            Spacer(modifier = Modifier.height(6.dp))
+
+                                            // Dòng sao đánh giá
+                                            Row {
+                                                repeat(review.rating.toInt()) {
+                                                    Icon(
+                                                        imageVector = Icons.Default.Star,
+                                                        contentDescription = "Star",
+                                                        tint = Color(0xFFFFC107),
+                                                        modifier = Modifier.size(18.dp)
+                                                    )
+                                                }
+                                            }
+
+                                            Spacer(modifier = Modifier.height(6.dp))
+
+                                            Text(
+                                                text = review.comment,
+                                                style = MaterialTheme.typography.bodyMedium
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
                 Spacer(modifier = Modifier.height(80.dp))
             }
         } ?: run {
@@ -418,86 +589,6 @@ fun RoomDetailScreen(roomId: String?, navController: NavController, roomViewMode
             }
         }
 
-
-        if (canReview.value) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text("Đánh giá phòng", fontWeight = FontWeight.Bold, fontSize = 18.sp)
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Text("Số sao:")
-                Slider(
-                    value = rating,
-                    onValueChange = { rating = it },
-                    valueRange = 0f..5f,
-                    steps = 4,
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Text("Đánh giá: ${rating.toInt()} sao")
-
-
-                OutlinedTextField(
-                    value = comment,
-                    onValueChange = { comment = it },
-                    label = { Text("Viết bình luận") },
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Button(
-                    onClick = {
-                        val review = Review(
-                            id = UUID.randomUUID().toString(),
-                            userId = userId,
-                            roomId = room?.id ?: "",
-                            rating = rating,
-                            comment = comment
-                        )
-                        roomViewModel.submitReview(review) { success ->
-                            if (success) {
-                                Toast.makeText(context, "Đã gửi đánh giá!", Toast.LENGTH_SHORT).show()
-                                rating = 0f
-                                comment = ""
-                            }
-                        }
-                    },
-                    enabled = userId.isNotEmpty() && rating > 0
-                ) {
-                    Text("Gửi đánh giá")
-                }
-            }
-        } else if (userId.isNotEmpty()) {
-            Text(
-                "Bạn cần đặt phòng trước khi có thể đánh giá.",
-                modifier = Modifier.padding(16.dp),
-                color = Color.Gray
-            )
-        }
-
-
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text("Đánh giá của người dùng", fontWeight = FontWeight.Bold, fontSize = 18.sp)
-            Spacer(modifier = Modifier.height(8.dp))
-            if (reviews.isEmpty()) {
-//                Text("Chưa có đánh giá nào.")
-            } else {
-                reviews.forEach { review ->
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 4.dp),
-                        elevation = CardDefaults.cardElevation(4.dp)
-                    ) {
-                        Column(modifier = Modifier.padding(12.dp)) {
-                            Text("⭐ ${review.rating.toInt()} sao", fontWeight = FontWeight.SemiBold)
-                            Text(review.comment)
-                            Text("Ngày: ${SimpleDateFormat("dd/MM/yyyy").format(Date(review.submittedAt))}",
-                                fontSize = 12.sp, color = Color.Gray)
-                        }
-                    }
-                }
-            }
-        }
 
 
     }

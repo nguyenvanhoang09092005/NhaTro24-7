@@ -34,6 +34,9 @@ object Routes {
         val encoded = URLEncoder.encode(transferContent, StandardCharsets.UTF_8.toString())
         return "qr_transfer_screen/$amount/$encoded"
     }
+    const val REVIEW_SCREEN = "review_screen/{roomId}/{bookingId}"
+
+    fun reviewScreenRoute(roomId: String, bookingId: String) = "review_screen/$roomId/$bookingId"
 
     //
 //    fun paymentScreenWithId(bookingRequestId: String, roomId: String) = "paymentScreen/$bookingRequestId/$roomId"
@@ -48,9 +51,9 @@ object Routes {
     const val LANDLORD_BOOKING_REQUESTS = "landlord_booking_requests"
     const val BOOKING_DETAIL = "booking_detail/{bookingRequestId}"
     const val ROOM_LIST = "room_list"
-    const val LANDLORD_STATISTIC_ROUTE = "landlord_statistic"
-    fun landlordStatisticRoute(landlordId: String) = "$LANDLORD_STATISTIC_ROUTE/$landlordId"
+    const val LANDLORD_STATISTICS = "landlord_statistics"
     const val SELECT_LOCATION = "select_location"
+
 
 
     const val CUSTOMER_CHAT = "customer_chat/{chatId}/{receiverId}/{receiverName}/{receiverAvatarUrl}"

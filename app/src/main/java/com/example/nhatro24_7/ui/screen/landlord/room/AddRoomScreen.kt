@@ -93,12 +93,13 @@ import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AddRoomScreen(navController: NavController, roomViewModel: RoomViewModel) {
+fun AddRoomScreen(navController: NavController, roomViewModel: RoomViewModel, roomId: String? = null)
+ {
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
 
     var currentStep by remember { mutableStateOf(0) }
-
+    var title by remember { mutableStateOf("") }
     var roomType by remember { mutableStateOf("Cho thuê") }
     var roomCategory by remember { mutableStateOf("Phòng") }
     var address by remember { mutableStateOf("") }
@@ -111,6 +112,10 @@ fun AddRoomScreen(navController: NavController, roomViewModel: RoomViewModel) {
     var description by remember { mutableStateOf("") }
     val shouldRefresh = remember { mutableStateOf(false) }
 
+     // Nhận dữ liệu địa chỉ trả về từ màn hình chọn vị trí
+     var latitude by remember { mutableStateOf(0.0) }
+     var longitude by remember { mutableStateOf(0.0) }
+
     LaunchedEffect(shouldRefresh.value) {
         if (shouldRefresh.value) {
             roomViewModel.fetchRooms()
@@ -118,11 +123,29 @@ fun AddRoomScreen(navController: NavController, roomViewModel: RoomViewModel) {
         }
     }
 
+     LaunchedEffect(roomId) {
+         if (roomId != null) {
+             roomViewModel.getRoomById(roomId) { room ->
+                 room?.let {
+                     title = it.title
+                     roomType = it.roomType
+                     roomCategory = it.roomCategory
+                     address = it.location
+                     price = it.price.toString()
+                     area = it.area.toString()
+                     latitude = it.latitude
+                     longitude = it.longitude
+                     description = it.description
+                     selectedAmenities.addAll(it.amenities)
+                     mainImage.value = it.mainImage
+                     imageList.clear()
+                     imageList.addAll(it.images)
+                 }
+             }
+         }
+     }
 
 
-    // Nhận dữ liệu địa chỉ trả về từ màn hình chọn vị trí
-    var latitude by remember { mutableStateOf(0.0) }
-    var longitude by remember { mutableStateOf(0.0) }
 
     // Nhận địa chỉ
     navController.currentBackStackEntry
@@ -176,8 +199,13 @@ fun AddRoomScreen(navController: NavController, roomViewModel: RoomViewModel) {
                             } else if (currentStep < 2) {
                                 currentStep++
                             }  else {
+                                if (title.isBlank()) {
+                                    title = roomViewModel.generateRoomTitle(roomType, address, price.toDoubleOrNull() ?: 0.0)
+                                }
+
                                 val room = Room(
-                                    title = "Tin đăng mới",
+                                    id = roomId ?: "",
+                                    title = title,
                                     description = description,
                                     price = price.toDoubleOrNull() ?: 0.0,
                                     area = area.toDoubleOrNull() ?: 0.0,
@@ -195,16 +223,30 @@ fun AddRoomScreen(navController: NavController, roomViewModel: RoomViewModel) {
                                 )
 
                                 scope.launch {
-                                    roomViewModel.addRoom(room) { success ->
-                                        if (success) {
-                                            shouldRefresh.value = true
-                                            Toast.makeText(context, "Đăng tin thành công", Toast.LENGTH_SHORT).show()
-                                            navController.popBackStack()
-                                        } else {
-                                            Toast.makeText(context, "Thất bại. Vui lòng thử lại", Toast.LENGTH_SHORT).show()
+                                    if (roomId != null && roomId.isNotBlank()) {
+                                        // cập nhật
+                                        roomViewModel.updateRoom(room) { success ->
+                                            if (success) {
+                                                Toast.makeText(context, "Cập nhật phòng thành công", Toast.LENGTH_SHORT).show()
+                                                navController.popBackStack()
+                                            } else {
+                                                Toast.makeText(context, "Cập nhật thất bại", Toast.LENGTH_SHORT).show()
+                                            }
+                                        }
+                                    } else {
+                                        // thêm mới
+                                        roomViewModel.addRoom(room) { success ->
+                                            if (success) {
+                                                shouldRefresh.value = true
+                                                Toast.makeText(context, "Đăng tin thành công", Toast.LENGTH_SHORT).show()
+                                                navController.popBackStack()
+                                            } else {
+                                                Toast.makeText(context, "Thất bại. Vui lòng thử lại", Toast.LENGTH_SHORT).show()
+                                            }
                                         }
                                     }
                                 }
+
                             }
                         },
                         enabled = true
@@ -238,13 +280,14 @@ fun AddRoomScreen(navController: NavController, roomViewModel: RoomViewModel) {
                     address, { address = it },
                     price, { price = it },
                     area, { area = it },
+                    title, { title = it },
                     description, { description = it },
                     latitude, longitude,
                     selectedAmenities
                 )
                 1 -> ImageUploadStep(mainImage, imageList)
                 2 -> ConfirmStep(
-                    roomType, roomCategory, address, price, area,
+                    title, roomType, roomCategory, address, price, area,
                     selectedAmenities, mainImage.value, imageList
                 )
             }
@@ -253,6 +296,7 @@ fun AddRoomScreen(navController: NavController, roomViewModel: RoomViewModel) {
             Spacer(modifier = Modifier.height(16.dp))
 
         }
+
     }
 }
 
@@ -267,6 +311,7 @@ fun InfoStep(
     address: String, onAddressChange: (String) -> Unit,
     price: String, onPriceChange: (String) -> Unit,
     area: String, onAreaChange: (String) -> Unit,
+    title: String, onTitleChange: (String) -> Unit,
     description: String, onDescriptionChange: (String) -> Unit,
     latitude: Double,
     longitude: Double,
@@ -282,6 +327,9 @@ fun InfoStep(
         verticalArrangement = Arrangement.spacedBy(12.dp),
         modifier = Modifier.fillMaxWidth()
     ) {
+
+
+
         Text("Loại tin", fontSize = 14.sp)
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             listOf("Cho thuê", "Tìm người ở ghép").forEach {
@@ -311,6 +359,14 @@ fun InfoStep(
                 )
             }
         }
+
+//        OutlinedTextField(
+//            value = title,
+//            onValueChange = onTitleChange,
+//            label = { Text("Tiêu đề tin đăng") },
+//            modifier = Modifier.fillMaxWidth(),
+//            singleLine = true
+//        )
 
         Column(modifier = Modifier.fillMaxWidth()) {
             Row(
@@ -597,7 +653,7 @@ fun ImageUploadStep(
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun ConfirmStep(
-    roomType: String, roomCategory: String, address: String,
+    title:String, roomType: String, roomCategory: String, address: String,
     price: String, area: String, selectedAmenities: List<String>,
     mainImage: String, images: List<String>
 ) {
@@ -635,7 +691,7 @@ fun ConfirmStep(
                 )
 
                 Divider(color = MaterialTheme.colorScheme.primary, thickness = 1.dp, modifier = Modifier.alpha(0.3f))
-
+                InfoRow(label = "Tiêu đề", value = title)
                 InfoRow(label = "Loại tin", value = roomType)
                 InfoRow(label = "Loại phòng", value = roomCategory)
                 InfoRow(label = "Địa chỉ", value = address)

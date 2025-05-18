@@ -21,6 +21,8 @@ import com.example.nhatro24_7.viewmodel.RoomViewModel
 import com.example.nhatro24_7.data.model.Room
 import com.example.nhatro24_7.navigation.Routes.qrTransferScreenRoute
 import com.example.nhatro24_7.viewmodel.PaymentViewModel
+import com.google.firebase.Firebase
+import com.google.firebase.auth.auth
 import java.text.NumberFormat
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
@@ -243,8 +245,9 @@ fun PaymentScreen(
                                 // Chuyển đến màn hình tạo mã QR
                                 val amountLong = totalAmount.toLong()
                                 val encodedContent = URLEncoder.encode(transferContent, StandardCharsets.UTF_8.toString())
-
-                                navController.navigate("qr_transfer_screen/$amountLong/$encodedContent")
+                                val currentUserId = Firebase.auth.currentUser?.uid ?: ""
+                                paymentViewModel.makePaymentWithAutoInfo(currentRoom, currentUserId)
+                                navController.navigate("qr_transfer_screen/$amountLong/$encodedContent/$bookingRequestId")
 
 
                             }

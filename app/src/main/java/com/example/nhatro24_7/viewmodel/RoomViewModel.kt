@@ -15,6 +15,8 @@ import com.example.nhatro24_7.data.model.Review
 import com.example.nhatro24_7.data.model.Room
 import com.example.nhatro24_7.data.model.SavedRoom
 import com.example.nhatro24_7.data.model.User
+import com.example.nhatro24_7.data.repository.RoomRepository
+import com.example.nhatro24_7.ui.screen.customer.search.calculateDistance
 import com.google.firebase.Firebase
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
@@ -98,6 +100,61 @@ class RoomViewModel : ViewModel() {
                 Log.e("RoomViewModel", "Lỗi khi thêm phòng mới: ${exception.message}", exception)
                 onResult(false)
             }
+    }
+
+
+    fun updateRoom(room: Room, onResult: (Boolean) -> Unit) {
+        val roomId = room.id ?: return onResult(false)
+
+        val roomMap = hashMapOf(
+            "title" to room.title,
+            "description" to room.description,
+            "price" to room.price,
+            "location" to room.location,
+            "latitude" to room.latitude,
+            "longitude" to room.longitude,
+            "area" to room.area,
+            "roomType" to room.roomType,
+            "roomCategory" to room.roomCategory,
+            "amenities" to room.amenities,
+            "mainImage" to room.mainImage,
+            "images" to room.images,
+            "isAvailable" to room.isAvailable,
+            "owner_id" to room.owner_id,
+            "created_at" to room.created_at
+        )
+
+        db.collection("rooms").document(roomId)
+            .update(roomMap as Map<String, Any>)
+            .addOnSuccessListener { onResult(true) }
+            .addOnFailureListener { onResult(false) }
+    }
+
+
+    fun deleteRoom(roomId: String, onResult: (Boolean) -> Unit) {
+        db.collection("rooms").document(roomId)
+            .delete()
+            .addOnSuccessListener { onResult(true) }
+            .addOnFailureListener { onResult(false) }
+    }
+
+    fun generateRoomTitle(roomType: String, location: String, price: Double): String {
+        val cleanedLocation = location.split(",").firstOrNull()?.trim() ?: location.trim()
+
+        val formattedPrice = when {
+            price >= 1_000_000 -> "${(price / 1_000_000).toInt()} triệu"
+            price >= 1_000 -> "${(price / 1_000).toInt()} nghìn"
+            else -> "$price đ"
+        }
+
+        val titleOptions = listOf(
+            "$roomType tại $cleanedLocation, giá $formattedPrice",
+            "$roomType giá $formattedPrice - $cleanedLocation",
+            "$roomType $formattedPrice/$cleanedLocation"
+        )
+
+        val bestTitle = titleOptions.firstOrNull { it.length <= 50 } ?: titleOptions[0].take(47) + "..."
+        return bestTitle
     }
 
 
@@ -516,7 +573,62 @@ class RoomViewModel : ViewModel() {
             }
     }
 
+    fun getLandlordInfoByBookingRequest(
+        bookingRequestId: String,
+        onResult: (User?) -> Unit
+    ) {
+        val db = FirebaseFirestore.getInstance()
+        db.collection("booking_requests").document(bookingRequestId)
+            .get()
+            .addOnSuccessListener { bookingSnap ->
+                val landlordId = bookingSnap.getString("landlordId")
+                if (landlordId != null) {
+                    db.collection("users").document(landlordId)
+                        .get()
+                        .addOnSuccessListener { userSnap ->
+                            val info = User(
+                                username = userSnap.getString("fullName") ?: "N/A",
+                                landlordBankName = userSnap.getString("bankName") ?: "N/A",
+                                landlordBankAccount = userSnap.getString("bankAccount") ?: "N/A"
+                            )
+                            onResult(info)
+                        }
+                        .addOnFailureListener {
+                            Log.e("QRCodeScreen", "Lỗi truy vấn users", it)
+                            onResult(null)
+                        }
+                } else {
+                    Log.e("QRCodeScreen", "Không tìm thấy landlordId trong booking")
+                    onResult(null)
+                }
+            }
+            .addOnFailureListener {
+                Log.e("QRCodeScreen", "Lỗi truy vấn booking_requests", it)
+                onResult(null)
+            }
+    }
 
+//    // tìm kiếm
+//    fun fetchRoomsNearby(
+//        latitude: Double,
+//        longitude: Double,
+//        onResult: (List<Room>) -> Unit,
+//        onError: (Exception) -> Unit
+//    ) {
+//        val db = FirebaseFirestore.getInstance()
+//        db.collection("rooms")
+//            .get()
+//            .addOnSuccessListener { result ->
+//                val nearbyRooms = result.documents.mapNotNull { it.toObject(Room::class.java) }
+//                    .filter {
+//                        calculateDistance(latitude, longitude, it.latitude, it.longitude) <= 5.0
+//                    }
+//                onResult(nearbyRooms)
+//            }
+//            .addOnFailureListener { exception ->
+//                onError(exception)
+//            }
+//    }
 
 }
 

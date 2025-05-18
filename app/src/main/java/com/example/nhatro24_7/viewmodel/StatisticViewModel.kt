@@ -23,10 +23,8 @@ class StatisticViewModel(
         _isLoading.value = true
         viewModelScope.launch {
             try {
-                // Lấy thống kê từ repository
                 val result = repository.getStatisticByLandlord(landlordId)
 
-                // Cập nhật giá trị vào _statistic
                 _statistic.value = Statistic(
                     revenue = result.revenue,
                     totalBookings = result.totalBookings,
@@ -36,7 +34,12 @@ class StatisticViewModel(
                     averageRating = result.averageRating,
                     paidRoomCount = result.paidRoomCount,
                     revenueByMonth = result.revenueByMonth,
-                    viewsByDay = result.viewsByDay
+                    viewsByDay = result.viewsByDay,
+
+                    bookingsByMonth = result.bookingsByMonth,
+                    checkoutsByMonth = result.checkoutsByMonth,
+                    cancellationsByMonth = result.cancellationsByMonth,
+                    paidRoomsByMonth = result.paidRoomsByMonth
                 )
             } catch (e: Exception) {
                 Log.e("StatisticViewModel", "Lỗi: ${e.message}", e)

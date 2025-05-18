@@ -73,4 +73,17 @@ class RoomRepository {
             false
         }
     }
+
+    fun updateBookingStatusToPaid(
+        bookingId: String,
+        onSuccess: () -> Unit,
+        onFailure: (Exception) -> Unit
+    ) {
+        val db = FirebaseFirestore.getInstance()
+        db.collection("bookings")
+            .document(bookingId)
+            .update("status", "paid")
+            .addOnSuccessListener { onSuccess() }
+            .addOnFailureListener { e -> onFailure(e) }
+    }
 }

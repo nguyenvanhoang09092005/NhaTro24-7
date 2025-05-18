@@ -2,6 +2,8 @@
 
 package com.example.nhatro24_7.ui.screen.component
 
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -17,6 +19,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.navigation.NavController
+import com.example.nhatro24_7.R
 import com.google.android.gms.location.LocationServices
 import com.mapbox.api.geocoding.v5.GeocodingCriteria
 import com.mapbox.api.geocoding.v5.MapboxGeocoding
@@ -24,9 +27,7 @@ import com.mapbox.api.geocoding.v5.models.GeocodingResponse
 import com.mapbox.geojson.Point
 import com.mapbox.maps.*
 import com.mapbox.maps.plugin.annotation.annotations
-import com.mapbox.maps.plugin.annotation.generated.PointAnnotationManager
-import com.mapbox.maps.plugin.annotation.generated.PointAnnotationOptions
-import com.mapbox.maps.plugin.annotation.generated.createPointAnnotationManager
+import com.mapbox.maps.plugin.annotation.generated.*
 import com.mapbox.maps.plugin.gestures.addOnMapClickListener
 import retrofit2.Call
 import retrofit2.Callback
@@ -49,7 +50,7 @@ fun SelectLocationScreen(navController: NavController) {
         MapInitOptions(
             context = context,
             resourceOptions = ResourceOptions.Builder()
-                .accessToken("pk.eyJ1IjoiaG9hbmdrZTM0MDJmIiwiYSI6ImNtYTBkYzAyZzIyeWsyam13dTFjOWthMHUifQ.lXQX_tarAl9h2Vqhx5Gg5Q") // ❗️Nhớ thay bằng token thật
+                .accessToken("pk.eyJ1IjoiaG9hbmdrZTM0MDJmIiwiYSI6ImNtYTBkYzAyZzIyeWsyam13dTFjOWthMHUifQ.lXQX_tarAl9h2Vqhx5Gg5Q")
                 .build()
         )
     }
@@ -59,6 +60,7 @@ fun SelectLocationScreen(navController: NavController) {
     val selectedAddress = remember { mutableStateOf<String?>(null) }
     val pointAnnotationManager = remember { mutableStateOf<PointAnnotationManager?>(null) }
 
+    // Hàm di chuyển đến vị trí hiện tại
     fun moveToCurrentLocation() {
         fusedLocationClient.lastLocation
             .addOnSuccessListener { location ->
@@ -70,6 +72,13 @@ fun SelectLocationScreen(navController: NavController) {
                             .zoom(14.0)
                             .build()
                     )
+
+                    pointAnnotationManager.value?.deleteAll()
+                    pointAnnotationManager.value?.create(
+                        PointAnnotationOptions()
+                            .withPoint(point)
+                            .withIconImage("current-location-icon")
+                    )
                 } else {
                     Toast.makeText(context, "Không tìm được vị trí hiện tại", Toast.LENGTH_SHORT).show()
                 }
@@ -79,7 +88,7 @@ fun SelectLocationScreen(navController: NavController) {
             }
     }
 
-
+    // Hàm chuyển tọa độ thành địa chỉ
     fun reverseGeocode(point: Point) {
         val geocoding = MapboxGeocoding.builder()
             .accessToken("pk.eyJ1IjoiaG9hbmdrZTM0MDJmIiwiYSI6ImNtYTBkYzAyZzIyeWsyam13dTFjOWthMHUifQ.lXQX_tarAl9h2Vqhx5Gg5Q")
@@ -104,31 +113,44 @@ fun SelectLocationScreen(navController: NavController) {
         })
     }
 
+    // Lắng nghe khi bản đồ load xong
+    LaunchedEffect(selectedStyle) {
+        val mapboxMap = mapView.getMapboxMap()
+        mapboxMap.loadStyleUri(mapStyles[selectedStyle]!!) { style ->
+            // Tạo annotation manager
+            pointAnnotationManager.value = mapView.annotations.createPointAnnotationManager()
+
+            // Thêm icon
+            mapView.bitmapFromDrawableRes(context, R.drawable.map)?.let { originalBitmap ->
+                val resizedBitmap = resizeBitmap(originalBitmap, 0.05f)
+                style.addImage("current-location-icon", resizedBitmap)
+                style.addImage("marker-icon", resizedBitmap)
+            }
+
+            // Lắng nghe khi người dùng bấm vào bản đồ
+            mapboxMap.addOnMapClickListener { latLng ->
+                val clickedPoint = Point.fromLngLat(latLng.longitude(), latLng.latitude())
+                pointAnnotationManager.value?.deleteAll()
+                pointAnnotationManager.value?.create(
+                    PointAnnotationOptions()
+                        .withPoint(clickedPoint)
+                        .withIconImage("marker-icon")
+                )
+                selectedPoint.value = clickedPoint
+                reverseGeocode(clickedPoint)
+                true
+            }
+        }
+    }
+
+    // Tự động lấy vị trí khi mở màn hình
     LaunchedEffect(Unit) {
         moveToCurrentLocation()
     }
 
+    // UI
     Box(modifier = Modifier.fillMaxSize()) {
-        AndroidView(factory = { mapView }, modifier = Modifier.fillMaxSize()) {
-            mapView.getMapboxMap().loadStyleUri(mapStyles[selectedStyle]!!) {
-                val annotationApi = mapView.annotations
-                pointAnnotationManager.value = annotationApi.createPointAnnotationManager()
-
-                mapView.getMapboxMap().addOnMapClickListener { clicked ->
-                    val clickedPoint = Point.fromLngLat(clicked.longitude(), clicked.latitude())
-                    pointAnnotationManager.value?.deleteAll()
-                    pointAnnotationManager.value?.create(
-                        PointAnnotationOptions()
-                            .withPoint(clickedPoint)
-                            .withIconImage("marker-15")
-                    )
-
-                    selectedPoint.value = clickedPoint
-                    reverseGeocode(clickedPoint)
-                    true
-                }
-            }
-        }
+        AndroidView(factory = { mapView }, modifier = Modifier.fillMaxSize())
 
         Column(
             modifier = Modifier
@@ -147,12 +169,11 @@ fun SelectLocationScreen(navController: NavController) {
                     modifier = Modifier.menuAnchor()
                 )
                 ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-                    mapStyles.forEach { (name, styleUri) ->
+                    mapStyles.forEach { (name, _) ->
                         DropdownMenuItem(
                             text = { Text(name) },
                             onClick = {
                                 selectedStyle = name
-                                mapView.getMapboxMap().loadStyleUri(styleUri)
                                 expanded = false
                             }
                         )
@@ -208,4 +229,15 @@ fun SelectLocationScreen(navController: NavController) {
             Text("Xác nhận vị trí này")
         }
     }
+}
+
+// Tiện ích để chuyển drawable -> bitmap
+fun MapView.bitmapFromDrawableRes(context: android.content.Context, resId: Int): android.graphics.Bitmap? {
+    return BitmapFactory.decodeResource(context.resources, resId)
+}
+
+fun resizeBitmap(bitmap: Bitmap, scale: Float): Bitmap {
+    val width = (bitmap.width * scale).toInt()
+    val height = (bitmap.height * scale).toInt()
+    return Bitmap.createScaledBitmap(bitmap, width, height, true)
 }

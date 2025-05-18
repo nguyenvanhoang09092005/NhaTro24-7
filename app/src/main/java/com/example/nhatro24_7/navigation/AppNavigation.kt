@@ -46,9 +46,13 @@ import com.example.nhatro24_7.ui.screen.landlord.room.BookingRequestDetailScreen
 import com.example.nhatro24_7.ui.screen.landlord.room.BookingRequestsForLandlordScreen
 import com.example.nhatro24_7.ui.screen.landlord.room.RoomListScreen
 import androidx.compose.runtime.getValue
-import com.example.nhatro24_7.navigation.Routes.LANDLORD_STATISTIC_ROUTE
+import com.example.nhatro24_7.navigation.Routes.REVIEW_SCREEN
+import com.example.nhatro24_7.ui.screen.component.SelectLocationScreen
+import com.example.nhatro24_7.ui.screen.customer.home.ReviewScreen
 import com.example.nhatro24_7.ui.screen.customer.payment.QRCodeScreen
+import com.example.nhatro24_7.ui.screen.customer.search.SelectSearchLocationScreen
 import com.example.nhatro24_7.ui.screen.landlord.room.RoomDetailLandlord
+import com.example.nhatro24_7.ui.screen.landlord.statistical.StatisticalScreen
 
 
 import com.example.nhatro24_7.viewmodel.AuthViewModel
@@ -180,24 +184,47 @@ fun AppNavigation(
         }
 
         composable(
-            route = "qr_transfer_screen/{amount}/{transferContent}",
+            route = "qr_transfer_screen/{amount}/{transferContent}/{bookingRequestId}",
             arguments = listOf(
                 navArgument("amount") { type = NavType.LongType },
-                navArgument("transferContent") { type = NavType.StringType }
+                navArgument("transferContent") { type = NavType.StringType },
+                navArgument("bookingRequestId") { type = NavType.StringType }
             )
         ) { backStackEntry ->
             val amount = backStackEntry.arguments?.getLong("amount") ?: 0L
             val encodedTransferContent = backStackEntry.arguments?.getString("transferContent") ?: ""
             val transferContent = URLDecoder.decode(encodedTransferContent, StandardCharsets.UTF_8.toString())
+            val bookingRequestId = backStackEntry.arguments?.getString("bookingRequestId") ?: ""
+
+            val roomViewModel: RoomViewModel = hiltViewModel()
 
             QRCodeScreen(
                 navController = navController,
                 amount = amount,
-                transferContent = transferContent, // dùng đúng tên
-                onBack = { navController.popBackStack() }
+                transferContent = transferContent,
+                bookingRequestId = bookingRequestId,
+                roomViewModel = roomViewModel
             )
         }
 
+
+        composable(
+            route = REVIEW_SCREEN,
+            arguments = listOf(
+                navArgument("roomId") { type = NavType.StringType },
+                navArgument("bookingId") { type = NavType.StringType }
+            )
+        ) {
+            val roomId = it.arguments?.getString("roomId") ?: ""
+            val bookingId = it.arguments?.getString("bookingId") ?: ""
+
+            ReviewScreen(
+                roomId = roomId,
+                bookingId = bookingId,
+                navController = navController,
+                reviewViewModel = viewModel()
+            )
+        }
 
 
         composable("landlord_profile/{landlordId}") { backStackEntry ->
@@ -238,6 +265,12 @@ fun AppNavigation(
         composable(Routes.CUSTOMER_SEARCH) {
             SearchScreen(navController = navController, viewModel = RoomViewModel())
         }
+
+        composable("selectSearchLocation") {
+            SelectSearchLocationScreen(navController = navController)
+        }
+
+
         composable(
             "qr_transfer_screen/{amount}/{userJson}",
             arguments = listOf(
@@ -264,9 +297,23 @@ fun AppNavigation(
         composable(Routes.LANDLORD_HOME) {
             LandlordScreen(navController = navController, viewModel = authViewModel)
         }
-        composable(Routes.LANDLORD_ADD_POST) {
-            AddRoomScreen(navController = navController, roomViewModel = RoomViewModel())
+        composable("${Routes.LANDLORD_ADD_POST}?roomId={roomId}") { backStackEntry ->
+            val roomId = backStackEntry.arguments?.getString("roomId")
+            AddRoomScreen(navController = navController, roomViewModel = RoomViewModel(), roomId = roomId)
         }
+
+        composable(
+            route = "addPost?roomId={roomId}",
+            arguments = listOf(navArgument("roomId") {
+                type = NavType.StringType
+                nullable = false
+            })
+        ) { backStackEntry ->
+            val roomId = backStackEntry.arguments?.getString("roomId")
+            AddRoomScreen(navController = navController, roomViewModel = RoomViewModel(), roomId = roomId)
+        }
+
+
         composable(Routes.LANDLORD_PROFILE) {
             ProfileLandlordScreen(
                 navController = navController,
@@ -308,6 +355,10 @@ fun AppNavigation(
                 roomViewModel = roomViewModel,
                 roomsByLandlord = roomsByLandlord
             )
+        }
+
+        composable(Routes.LANDLORD_STATISTICS) {
+            StatisticalScreen(navController = navController)
         }
 
         composable("room_detail_landlord/{roomId}") { backStackEntry ->

@@ -34,6 +34,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.nhatro24_7.navigation.Routes
+import com.example.nhatro24_7.navigation.Routes.reviewScreenRoute
 import com.example.nhatro24_7.viewmodel.NotificationViewModel
 
 
@@ -118,7 +119,7 @@ fun BookingRequestCard(
             .clickable {
                 roomViewModel.getRoomById(request.roomId) { room ->
                     room?.let {
-                        navController.navigate("bookingDetailHistory/${request.roomId}/${request.id}")
+//                        navController.navigate("bookingDetailHistory/${request.roomId}/${request.id}")
                     }
                 }
             },
@@ -349,17 +350,34 @@ fun ActionSection(request: BookingRequest, navController: NavController, roomTit
                     color = Color.Gray,
                     fontWeight = FontWeight.Medium
                 )
-                Button(
-                    onClick = {
-                        navController.navigate("roomDetail/${request.roomId}")
-                    },
-                    shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50))
-                ) {
-                    Text("Đặt lại")
+                Row {
+                    Button(
+                        onClick = {
+                            navController.navigate("roomDetail/${request.roomId}")
+                        },
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50)),
+                        modifier = Modifier.padding(end = 8.dp)
+                    ) {
+                        Text("Đặt lại")
+                    }
+                    Button(
+                        onClick = {
+                            val bookingId = request.id
+                            val roomId = request.roomId
+                            navController.navigate("review_screen/$roomId/$bookingId")
+
+                        },
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF03A9F4))
+                    ) {
+                        Text("Đánh giá")
+                    }
+
                 }
             }
         }
+
 
     }
 }

@@ -28,5 +28,10 @@ data class Statistic(
     val averageRating: Float = 0f,
     val paidRoomCount: Long = 0L,
     val revenueByMonth: Map<String, Long> = emptyMap(),
-    val viewsByDay: Map<String, Int> = emptyMap()
+    val viewsByDay: Map<String, Int> = emptyMap(),
+
+    val bookingsByMonth: Map<String, Int> = emptyMap(),
+    val checkoutsByMonth: Map<String, Int> = emptyMap(),
+    val cancellationsByMonth: Map<String, Int> = emptyMap(),
+    val paidRoomsByMonth: Map<String, Int> = emptyMap()
 )
