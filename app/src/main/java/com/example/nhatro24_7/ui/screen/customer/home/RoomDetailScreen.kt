@@ -313,7 +313,7 @@ fun RoomDetailScreen(roomId: String?, navController: NavController, roomViewMode
                             Spacer(modifier = Modifier.width(12.dp))
 
                             Column {
-                                Text(text = it.fullName, fontWeight = FontWeight.Medium, fontSize = 16.sp)
+                                Text(text = it.username, fontWeight = FontWeight.Medium, fontSize = 16.sp)
                                 Text(
                                     text = "${it.birthDate}",
                                     fontSize = 13.sp,
@@ -335,7 +335,7 @@ fun RoomDetailScreen(roomId: String?, navController: NavController, roomViewMode
                                     val landlordId = room.owner_id
                                     val chatId = generateChatId(currentUserId, landlordId)
 
-                                    val encodedName = Uri.encode(landlord.fullName)
+                                    val encodedName = Uri.encode(landlord.username)
                                     val encodedAvatar = Uri.encode(landlord.avatarUrl)
 
                                     val db = FirebaseFirestore.getInstance()
@@ -351,7 +351,7 @@ fun RoomDetailScreen(roomId: String?, navController: NavController, roomViewMode
                                         if (
                                             chatId.isNotEmpty() &&
                                             landlordId.isNotEmpty() &&
-                                            landlord.fullName.isNotEmpty() &&
+                                            landlord.username.isNotEmpty() &&
                                             landlord.avatarUrl.isNotEmpty()
                                         ) {
                                             navController.navigate(

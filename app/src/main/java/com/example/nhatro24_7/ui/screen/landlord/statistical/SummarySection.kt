@@ -10,6 +10,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.nhatro24_7.data.model.Statistic
+import java.text.NumberFormat
+import java.util.Locale
 
 @Composable
 fun SummarySection(statistic: Statistic) {
@@ -22,11 +24,16 @@ fun SummarySection(statistic: Statistic) {
         )
 
         // Grid layout: 2 cột
+        val formattedRevenue = NumberFormat.getNumberInstance(Locale("vi", "VN"))
+            .format(statistic.revenue)
+        // Grid layout: 2 cột
         Column {
+
+
             Row(modifier = Modifier.fillMaxWidth()) {
                 StatCard(
                     title = "Tổng doanh thu",
-                    value = "${statistic.revenue}đ",
+                    value = "${formattedRevenue}đ",
                     color = Color(0xFF4CAF50), // Green
                     modifier = Modifier.weight(1f)
                 )

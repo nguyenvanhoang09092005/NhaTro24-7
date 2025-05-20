@@ -139,6 +139,8 @@ dependencies {
 
     //thông báo
     implementation("androidx.work:work-runtime-ktx:2.9.0")
+    implementation ("androidx.datastore:datastore-preferences:1.0.0")
+
 
     // Xử lý lỗi Duplicate class - Exclude firebase-common nếu cần
     implementation("com.google.firebase:firebase-firestore-ktx") {

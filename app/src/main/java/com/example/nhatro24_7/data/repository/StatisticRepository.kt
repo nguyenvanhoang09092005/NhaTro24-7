@@ -10,19 +10,19 @@ class StatisticRepository {
 
     suspend fun getStatisticByLandlord(landlordId: String): Statistic {
         try {
-            // Lấy tất cả yêu cầu đặt phòng
             val bookingsSnapshot = db.collection("booking_requests")
                 .whereEqualTo("landlordId", landlordId)
                 .get()
                 .await()
 
             val bookings = bookingsSnapshot.documents
+
             val totalBookings = bookings.count { it.getString("status") == "accepted" }
             val totalCancellations = bookings.count { it.getString("status") == "cancelled" }
             val totalCheckouts = bookings.count { it.getString("status") == "returned" }
 
-            // Lấy các phòng tương ứng với các yêu cầu đặt phòng
             val roomIds = bookings.mapNotNull { it.getString("roomId") }.distinct()
+
             val roomsSnapshot = db.collection("rooms")
                 .whereIn("id", roomIds.take(10))
                 .get()
@@ -32,14 +32,12 @@ class StatisticRepository {
                 it.id to (it.getLong("price") ?: 0L)
             }
 
-            // Doanh thu từ phòng đã trả lại
             var revenueFromReturnedRooms = 0L
             bookings.filter { it.getString("status") == "returned" }.forEach {
                 val roomId = it.getString("roomId")
                 revenueFromReturnedRooms += roomMap[roomId] ?: 0L
             }
 
-            // Doanh thu từ thanh toán
             val paymentsSnapshot = db.collection("payment")
                 .whereEqualTo("landlordId", landlordId)
                 .whereEqualTo("status", "paid")
@@ -52,27 +50,50 @@ class StatisticRepository {
 
             val totalRevenue = revenueFromReturnedRooms + revenueFromPayments
 
-            // Doanh thu theo tháng
-            val revenueByMonth = mutableMapOf<String, Long>()
-            paymentsSnapshot.documents.forEach { doc ->
-                val month = doc.getString("month") ?: ""
-                val amount = doc.getDouble("amount")?.toLong() ?: 0L
-                revenueByMonth[month] = (revenueByMonth[month] ?: 0L) + amount
+            // Khởi tạo map số lượng theo tháng
+            val bookingsByMonth = mutableMapOf<String, Int>()
+            val checkoutsByMonth = mutableMapOf<String, Int>()
+            val cancellationsByMonth = mutableMapOf<String, Int>()
+            val paidRoomsByMonth = mutableMapOf<String, Int>()
+
+            // Đếm số lượng đặt, trả, huỷ theo tháng trong booking_requests
+            bookings.forEach { doc ->
+                val month = doc.getString("month") ?: return@forEach
+                when (doc.getString("status")) {
+                    "accepted" -> bookingsByMonth[month] = (bookingsByMonth[month] ?: 0) + 1
+                    "returned" -> checkoutsByMonth[month] = (checkoutsByMonth[month] ?: 0) + 1
+                    "cancelled" -> cancellationsByMonth[month] = (cancellationsByMonth[month] ?: 0) + 1
+                }
             }
 
-            // Lượt xem theo ngày
+            // Đếm số lượng thanh toán theo tháng trong payment
+            paymentsSnapshot.documents.forEach { doc ->
+                val month = doc.getString("month") ?: return@forEach
+                paidRoomsByMonth[month] = (paidRoomsByMonth[month] ?: 0) + 1
+            }
+
+            // Lấy logs xem phòng có action = "Xem phòng"
             val logsSnapshot = db.collection("activity_logs")
                 .whereEqualTo("action", "Xem phòng")
                 .get()
                 .await()
 
             val viewsByDay = mutableMapOf<String, Int>()
-            logsSnapshot.documents.forEach { log ->
+
+            logsSnapshot.documents.filter { doc ->
+                val roomId = doc.getString("roomId")
+                roomId != null && roomIds.contains(roomId)
+            }.forEach { log ->
                 val date = log.getString("date") ?: ""
                 viewsByDay[date] = (viewsByDay[date] ?: 0) + 1
             }
 
-            // Đánh giá trung bình của các phòng
+            val filteredViewsCount = logsSnapshot.documents.count { doc ->
+                val roomId = doc.getString("roomId")
+                roomId != null && roomIds.contains(roomId)
+            }
+
+            // Lấy đánh giá phòng
             val reviewsSnapshot = db.collection("reviews")
                 .whereIn("roomId", roomIds.take(10))
                 .get()
@@ -84,17 +105,19 @@ class StatisticRepository {
 
             val averageRating = if (ratings.isNotEmpty()) ratings.average().toFloat() else 0f
 
-            // Trả về đối tượng Statistic đầy đủ
             return Statistic(
                 revenue = totalRevenue.toDouble(),
                 totalBookings = totalBookings,
                 totalCancellations = totalCancellations,
                 totalCheckouts = totalCheckouts,
-                totalViews = logsSnapshot.size(),
+                totalViews = filteredViewsCount,
                 averageRating = averageRating,
                 paidRoomCount = revenueFromPayments,
-                revenueByMonth = revenueByMonth,
-                viewsByDay = viewsByDay
+                viewsByDay = viewsByDay,
+                bookingsByMonth = bookingsByMonth,
+                checkoutsByMonth = checkoutsByMonth,
+                cancellationsByMonth = cancellationsByMonth,
+                paidRoomsByMonth = paidRoomsByMonth
             )
         } catch (e: Exception) {
             throw Exception("Lỗi khi lấy thống kê: ${e.message}", e)

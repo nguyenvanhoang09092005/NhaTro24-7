@@ -108,18 +108,18 @@ fun StatisticalScreen(
                 RevenueBarChart(revenueByMonth = statistic.revenueByMonth)
 
                 Spacer(modifier = Modifier.height(24.dp))
-                Text(
-                    text = "Biểu đồ đường: Đặt, Trả, Hủy, Thanh toán theo tháng",
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
-                BookingLineChart(
-                    bookingsByMonth = statistic.bookingsByMonth,
-                    checkoutsByMonth = statistic.checkoutsByMonth,
-                    cancellationsByMonth = statistic.cancellationsByMonth,
-                    paidRoomsByMonth = statistic.paidRoomsByMonth
-                )
+//                Text(
+//                    text = "Biểu đồ đường: Đặt, Trả, Hủy, Thanh toán theo tháng",
+//                    fontSize = 20.sp,
+//                    fontWeight = FontWeight.Bold,
+//                    modifier = Modifier.padding(bottom = 8.dp)
+//                )
+//                BookingLineChart(
+//                    bookingsByMonth = statistic.bookingsByMonth,
+//                    checkoutsByMonth = statistic.checkoutsByMonth,
+//                    cancellationsByMonth = statistic.cancellationsByMonth,
+//                    paidRoomsByMonth = statistic.paidRoomsByMonth
+//                )
             }
         }
     }
@@ -178,42 +178,34 @@ fun BookingLineChart(
 
             chart.data = LineData(dataSets)
 
-            // Bật chú thích tương tác
             chart.legend.isEnabled = true
             chart.legend.isWordWrapEnabled = true
 
-            // Bật các thao tác chạm
             chart.setTouchEnabled(true)
             chart.setPinchZoom(true)
             chart.setScaleEnabled(true)
             chart.setDrawGridBackground(false)
 
             val yAxisLeft = chart.axisLeft
-            yAxisLeft.axisMinimum = 0f                 // Bắt đầu từ 0
-            yAxisLeft.axisMaximum = 10f                // Ép hiển thị đến 10 (hoặc lớn hơn nếu muốn)
-            yAxisLeft.granularity = 1f                 // Chia đơn vị mỗi 1
-            yAxisLeft.setLabelCount(10, true)          // Hiển thị 10 nhãn trục
+            val maxValue = listOf(bookingsByMonth, checkoutsByMonth, cancellationsByMonth, paidRoomsByMonth)
+                .flatMap { it.values }
+                .maxOrNull()?.toFloat() ?: 10f
+            yAxisLeft.axisMinimum = 0f
+            yAxisLeft.axisMaximum = maxValue + 2f
+            yAxisLeft.granularity = 1f
+            yAxisLeft.setLabelCount((maxValue.toInt() + 2).coerceAtLeast(5), true)
             yAxisLeft.setDrawGridLines(true)
             yAxisLeft.setDrawLabels(true)
 
             chart.axisRight.isEnabled = false
 
             val xAxis = chart.xAxis
-            xAxis.position = com.github.mikephil.charting.components.XAxis.XAxisPosition.BOTTOM
+            xAxis.position = XAxis.XAxisPosition.BOTTOM
             xAxis.granularity = 1f
             xAxis.setLabelCount(12, true)
             xAxis.axisMinimum = 1f
             xAxis.axisMaximum = 12f
-            xAxis.valueFormatter = IndexAxisValueFormatter(
-                (0..12).map { "$it" }
-            )
-
-            chart.legend.isEnabled = true
-            chart.legend.isWordWrapEnabled = true
-            chart.setTouchEnabled(true)
-            chart.setPinchZoom(true)
-            chart.setScaleEnabled(true)
-            chart.setDrawGridBackground(false)
+            xAxis.valueFormatter = IndexAxisValueFormatter(months)
 
             chart.description.isEnabled = false
             chart.invalidate()

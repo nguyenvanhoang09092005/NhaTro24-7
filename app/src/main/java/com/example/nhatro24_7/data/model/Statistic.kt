@@ -33,5 +33,6 @@ data class Statistic(
     val bookingsByMonth: Map<String, Int> = emptyMap(),
     val checkoutsByMonth: Map<String, Int> = emptyMap(),
     val cancellationsByMonth: Map<String, Int> = emptyMap(),
-    val paidRoomsByMonth: Map<String, Int> = emptyMap()
+    val paidRoomsByMonth: Map<String, Int> = emptyMap(),
+    val totalRooms: Int = 0
 )

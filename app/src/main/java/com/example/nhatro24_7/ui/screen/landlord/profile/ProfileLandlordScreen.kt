@@ -132,7 +132,7 @@ fun ProfileLandlordScreen(
                     listOf(
                         Triple("Danh sách phòng", Icons.Default.MeetingRoom, "room_list"),
                         Triple("Yêu cầu thuê phòng", Icons.Default.Inbox, "landlord_booking_requests"),
-                        Triple("Đánh giá của khách", Icons.Default.ThumbUp, "guest_reviews")
+//                        Triple("Đánh giá của khách", Icons.Default.ThumbUp, "guest_reviews")
                     ), navController)
 
 

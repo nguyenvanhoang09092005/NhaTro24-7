@@ -44,6 +44,8 @@ fun PaymentScreen(
     var isLoading by remember { mutableStateOf(true) }
     var selectedPayment by remember { mutableStateOf("Chuyển khoản") }
     val formatter = NumberFormat.getCurrencyInstance(Locale("vi", "VN"))
+    var showConfirmDialog by remember { mutableStateOf(false) }
+    var isProcessing by remember { mutableStateOf(false) }
 
     LaunchedEffect(paymentViewModel.paymentSuccess) {
         if (paymentViewModel.paymentSuccess) {
@@ -159,8 +161,8 @@ fun PaymentScreen(
                     Spacer(Modifier.height(16.dp))
 
                     // Phương thức thanh toán
-                    var selectedPayment by remember { mutableStateOf("Thẻ ngân hàng") }
-                    val payments = listOf("Thẻ ngân hàng", "Ví điện tử", "Chuyển khoản", "Tiền mặt")
+//                    var selectedPayment by remember { mutableStateOf("Thẻ ngân hàng") }
+                    val payments = listOf( "Chuyển khoản", "Tiền mặt")
 
                     Card(
                         shape = RoundedCornerShape(12.dp),
@@ -185,37 +187,81 @@ fun PaymentScreen(
                             }
 
                             // Nội dung phương thức thanh toán
-                            if (selectedPayment in listOf("Thẻ ngân hàng", "Ví điện tử")) {
-                                Column(Modifier.padding(top = 8.dp)) {
-                                    OutlinedTextField(
-                                        value = "", onValueChange = {},
-                                        label = { Text("Số thẻ/Tài khoản") },
-                                        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-                                        shape = RoundedCornerShape(8.dp)
-                                    )
-                                    OutlinedTextField(
-                                        value = "", onValueChange = {},
-                                        label = { Text("Tên chủ thẻ") },
-                                        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-                                        shape = RoundedCornerShape(8.dp)
-                                    )
-                                    Row {
-                                        OutlinedTextField(
-                                            value = "", onValueChange = {},
-                                            label = { Text("Ngày hết hạn") },
-                                            modifier = Modifier.weight(1f).padding(end = 4.dp),
-                                            shape = RoundedCornerShape(8.dp)
+//                            if (selectedPayment in listOf("Thẻ ngân hàng", "Ví điện tử")) {
+//                                Column(Modifier.padding(top = 8.dp)) {
+//                                    OutlinedTextField(
+//                                        value = "", onValueChange = {},
+//                                        label = { Text("Số thẻ/Tài khoản") },
+//                                        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+//                                        shape = RoundedCornerShape(8.dp)
+//                                    )
+//                                    OutlinedTextField(
+//                                        value = "", onValueChange = {},
+//                                        label = { Text("Tên chủ thẻ") },
+//                                        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+//                                        shape = RoundedCornerShape(8.dp)
+//                                    )
+//                                    Row {
+//                                        OutlinedTextField(
+//                                            value = "", onValueChange = {},
+//                                            label = { Text("Ngày hết hạn") },
+//                                            modifier = Modifier.weight(1f).padding(end = 4.dp),
+//                                            shape = RoundedCornerShape(8.dp)
+//                                        )
+//                                        OutlinedTextField(
+//                                            value = "", onValueChange = {},
+//                                            label = { Text("CVV") },
+//                                            modifier = Modifier.weight(1f).padding(start = 4.dp),
+//                                            shape = RoundedCornerShape(8.dp)
+//                                        )
+//                                    }
+//                                }
+//                            }
+
+
+                        }
+                    }
+
+                    if (showConfirmDialog) {
+                        AlertDialog(
+                            onDismissRequest = { showConfirmDialog = false },
+                            title = { Text("Xác nhận thanh toán") },
+                            text = { Text("Bạn chắc chắn đã thanh toán tiền mặt cho chủ nhà?") },
+                            confirmButton = {
+                                Button(
+                                    onClick = {
+                                        showConfirmDialog = false
+                                        isProcessing = true
+                                        roomViewModel.updateBookingStatus(bookingRequestId, "paid") { success ->
+                                            isProcessing = false
+                                            if (success) {
+                                                navController.navigate("customer_booking_history") {
+                                                    popUpTo("customer_booking_history") { inclusive = true }
+                                                }
+                                            } else {
+                                                // Hiển thị thông báo lỗi
+                                            }
+                                        }
+                                    },
+                                    enabled = !isProcessing
+                                ) {
+                                    if (isProcessing) {
+                                        CircularProgressIndicator(
+                                            modifier = Modifier.size(20.dp),
+                                            color = MaterialTheme.colorScheme.onPrimary,
+                                            strokeWidth = 2.dp
                                         )
-                                        OutlinedTextField(
-                                            value = "", onValueChange = {},
-                                            label = { Text("CVV") },
-                                            modifier = Modifier.weight(1f).padding(start = 4.dp),
-                                            shape = RoundedCornerShape(8.dp)
-                                        )
+                                    } else {
+                                        Text("Xác nhận đã thanh toán")
                                     }
                                 }
+                            },
+                            dismissButton = {
+                                TextButton(onClick = { showConfirmDialog = false }) {
+                                    Text("Hủy")
+                                }
                             }
-                        }
+                        )
                     }
 
                     Spacer(Modifier.height(20.dp))
@@ -250,6 +296,9 @@ fun PaymentScreen(
                                 navController.navigate("qr_transfer_screen/$amountLong/$encodedContent/$bookingRequestId")
 
 
+                            }else if (selectedPayment == "Tiền mặt") {
+                                // Hiển thị dialog xác nhận
+                                showConfirmDialog = true
                             }
                         },
 

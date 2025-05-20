@@ -157,7 +157,7 @@ fun ProfileScreen(
                         Triple("Lịch sử đã xem", Icons.Default.History,Routes.CUSTOMER_HISTORY),
                         Triple("Lịch sử đặt phòng", Icons.Default.Hotel, "customer_booking_history"),
 //                        Triple("Lịch sử hủy phòng", Icons.Default.Cancel, "cancel_history"),
-                        Triple("Đánh giá đã gửi", Icons.Default.RateReview, "review_history")
+//                        Triple("Đánh giá đã gửi", Icons.Default.RateReview, "review_history")
                     ),
                     navController = navController
                 )
@@ -177,7 +177,7 @@ fun ProfileScreen(
                 )
 
 
-                ProfileOption(Icons.Default.CardGiftcard, "Thông báo") { /* TODO */ }
+//                ProfileOption(Icons.Default.CardGiftcard, "Thông báo") { /* TODO */ }
                 ProfileOption(Icons.Default.Info, "Điều khoản và chính sách") { navController.navigate("termAndPolicy") }
 
 
@@ -193,14 +193,14 @@ fun ProfileScreen(
                         title = "Chuyển vai trò",
                         currentRole = userRole,
                         onRoleToggle = {
-                            viewModel.toggleUserRole() // Gọi hàm toggle vai trò trong ViewModel
+                            viewModel.toggleUserRole()
                         }
                     )
 
 
                     SettingToggleItem(Icons.Default.Notifications, "Nhận thông báo", isNotificationEnabled) {
                     isNotificationEnabled = it
-                    // TODO: Save to DataStore if needed
+
                 }
 
                 ProfileOption(Icons.Default.Logout, "Đăng xuất") {
